@@ -7,13 +7,17 @@ import torch
 import gym
 
 from env.custom_hopper import *
-from agent import Agent, Policy
+from agent import Agent, Policy 
+
+import numpy as np
+import os
+import time
 
 
 def parse_args():
     parser = argparse.ArgumentParser()
     parser.add_argument('--n-episodes', default=100000, type=int, help='Number of training episodes')
-    parser.add_argument('--print-every', default=20000, type=int, help='Print info every <> episodes')
+    parser.add_argument('--print-every', default=5000, type=int, help='Print info every <> episodes')
     parser.add_argument('--device', default='cpu', type=str, help='network device [cpu, cuda]')
 
     return parser.parse_args()
@@ -44,7 +48,14 @@ def main():
     # TASK 2 and 3: interleave data collection to policy updates
     #
 
+
+	all_returns = []	# 🏆 Store returns per episode
+	episode_times = []  # ⏱ Store training time per episode
+	losses = []  # Track loss per episode
+
 	for episode in range(args.n_episodes):
+		start_time = time.time()
+		
 		done = False
 		train_reward = 0
 		state = env.reset()  # Reset the environment and observe the initial state
@@ -60,14 +71,41 @@ def main():
 
 			train_reward += reward
 		
-		agent.update_policy()
+		loss = agent.update_policy()
+		losses.append(loss)
+
+		end_time = time.time()
+		all_returns.append(train_reward)
+		episode_times.append(end_time - start_time)
 		
+
+		# Log each 5000 episodes 
 		if (episode+1)%args.print_every == 0:
 			print('Training episode:', episode)
 			print('Episode return:', train_reward)
 
 
-	torch.save(agent.policy.state_dict(), "model.mdl")
+	# Ensure directories exist
+	os.makedirs("models", exist_ok=True)
+    os.makedirs("logs", exist_ok=True)
+	os.makedirs("analysis", exist_ok=True)
+
+	# Save logs
+    np.save("logs/mu_log.npy",     np.array(agent.mu_log))
+    np.save("logs/sigma_log.npy",  np.array(agent.sigma_log))
+    np.save("logs/actions_log.npy", np.array(agent.actions_log))
+	np.save("logs/entropy_log.npy",  np.array(agent.entropy_log))
+
+	# Save episode times
+	np.save("analysis/episode_times_reinforce_nobaseline_nonnorm.npy", np.array(episode_times))
+	# Save returns
+	np.save("analysis/returns_per_episode_reinforce_nobaseline_nonnorm.npy", np.array(all_returns))
+	# Save losses
+	np.save("analysis/losses_per_episode_reinforce_nobaseline_nonnorm.npy", np.array(losses))
+
+
+	# Save model
+	torch.save(agent.policy.state_dict(), "models/model_reinforce_nobaseline_nonnorm.mdl")
 
 	
 

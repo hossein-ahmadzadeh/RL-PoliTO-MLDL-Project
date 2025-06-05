@@ -84,6 +84,11 @@ class Agent(object):
         self.rewards = []
         self.done = []
 
+        self.mu_log = []         # Stores [μ1, μ2, μ3] per episode
+        self.sigma_log = []      # Stores [σ1, σ2, σ3] per episode
+        self.actions_log = []    # Stores [a1, a2, a3] per step
+        self.entropy_log = []    # Stores entropy of the action distribution per step
+
 
     def update_policy(self):
         action_log_probs = torch.stack(self.action_log_probs, dim=0).to(self.train_device).squeeze(-1)
@@ -115,7 +120,7 @@ class Agent(object):
         #   - compute gradients and step the optimizer
         #
 
-        return        
+        return loss.item() # Return the loss for monitoring   
 
 
     def get_action(self, state, evaluation=False):
@@ -132,6 +137,36 @@ class Agent(object):
 
             # Compute Log probability of the action [ log(p(a[0] AND a[1] AND a[2])) = log(p(a[0])*p(a[1])*p(a[2])) = log(p(a[0])) + log(p(a[1])) + log(p(a[2])) ]
             action_log_prob = normal_dist.log_prob(action).sum()
+
+
+
+            # 🧠 Entropy of the policy
+            entropy = normal_dist.entropy().sum().item()
+            self.entropy_log.append(entropy)
+
+
+            # Logging for monitoring Mean (μ) and Standard Deviation (σ) and actions (a)
+            mu = normal_dist.mean.detach().cpu().numpy()
+            sigma = normal_dist.stddev.detach().cpu().numpy()
+            action_np = action.detach().cpu().numpy()
+
+
+            # ⚠️ Monitor μ and σ only on first state per episode (optional via a flag)
+            if len(self.states) == 0:  # first step of the episode
+                if np.any(np.abs(mu) > 10) or np.any(sigma > 5):
+                    print(f"[WARNING] Unusual μ or σ -> μ: {mu}, σ: {sigma}")
+                self.mu_log.append(mu.tolist())
+                self.sigma_log.append(sigma.tolist())
+            
+
+            # Save all sampled actions
+            self.actions_log.append(action_np.tolist())  # save full [a1, a2, a3] list
+
+            # ⚠️ Warn only if out-of-bounds
+            if np.any(np.abs(action_np) > 1.0):
+                print(f"[WARNING] Out-of-bounds action: {a}")
+
+
 
             return action, action_log_prob
 
