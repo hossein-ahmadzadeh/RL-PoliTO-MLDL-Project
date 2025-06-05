@@ -60,6 +60,8 @@ def main():
 
 			train_reward += reward
 		
+		agent.update_policy()
+		
 		if (episode+1)%args.print_every == 0:
 			print('Training episode:', episode)
 			print('Episode return:', train_reward)
