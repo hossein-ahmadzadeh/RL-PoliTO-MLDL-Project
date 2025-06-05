@@ -87,13 +87,13 @@ def main():
 
 	# Ensure directories exist
 	os.makedirs("models", exist_ok=True)
-    os.makedirs("logs", exist_ok=True)
+	os.makedirs("logs", exist_ok=True)
 	os.makedirs("analysis", exist_ok=True)
 
 	# Save logs
-    np.save("logs/mu_log.npy",     np.array(agent.mu_log))
-    np.save("logs/sigma_log.npy",  np.array(agent.sigma_log))
-    np.save("logs/actions_log.npy", np.array(agent.actions_log))
+	np.save("logs/mu_log.npy",     np.array(agent.mu_log))
+	np.save("logs/sigma_log.npy",  np.array(agent.sigma_log))
+	np.save("logs/actions_log.npy", np.array(agent.actions_log))
 	np.save("logs/entropy_log.npy",  np.array(agent.entropy_log))
 
 	# Save episode times
