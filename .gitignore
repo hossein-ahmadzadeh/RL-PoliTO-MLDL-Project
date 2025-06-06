@@ -5,3 +5,4 @@ __pycache__
 *.pyc
 */pycache
 mjkey.txt
+logs/actions_log.npy
