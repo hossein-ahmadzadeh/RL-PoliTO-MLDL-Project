@@ -133,7 +133,7 @@ class Agent(object):
             return normal_dist.mean, None
 
         else:   # Sample from the distribution
-            action = normal_dist.sample()
+            action = torch.tanh(normal_dist.sample())  # squash action into [-1, 1]
 
             # Compute Log probability of the action [ log(p(a[0] AND a[1] AND a[2])) = log(p(a[0])*p(a[1])*p(a[2])) = log(p(a[0])) + log(p(a[1])) + log(p(a[2])) ]
             action_log_prob = normal_dist.log_prob(action).sum()
@@ -153,7 +153,7 @@ class Agent(object):
 
             # ⚠️ Monitor μ and σ only on first state per episode (optional via a flag)
             if len(self.states) == 0:  # first step of the episode
-                if np.any(np.abs(mu) > 10) or np.any(sigma > 5):
+                if np.any(np.isnan(mu)) or np.any(np.isinf(mu)) or np.any(np.abs(mu) > 100) or np.any(sigma > 5):
                     print(f"[WARNING] Unusual μ or σ -> μ: {mu}, σ: {sigma}")
                 self.mu_log.append(mu.tolist())
                 self.sigma_log.append(sigma.tolist())
