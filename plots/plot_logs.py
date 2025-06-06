@@ -1,6 +1,10 @@
 import numpy as np
 import matplotlib.pyplot as plt
 import os
+import matplotlib as mpl
+
+
+mpl.rcParams['agg.path.chunksize'] = 10000
 
 # Create output directory
 os.makedirs("report/reinforce_nobaseline_nonnorm_tanh_action/images/log", exist_ok=True)
@@ -75,4 +79,4 @@ plt.savefig("report/reinforce_nobaseline_nonnorm_tanh_action/images/log/entropy_
 plt.close()
 
 # Plot smoothed/averaged actions
-plot_averaged_actions(actions_log, avg_every=1000)  # or try 1000 / 100000 too
+plot_averaged_actions(actions_log, avg_every=10000)  # or try 1000 / 100000 too
