@@ -164,7 +164,7 @@ class Agent(object):
 
             # ⚠️ Warn only if out-of-bounds
             if np.any(np.abs(action_np) > 1.0):
-                print(f"[WARNING] Out-of-bounds action: {a}")
+                print(f"[WARNING] Out-of-bounds action: {action_np}")
 
 
 
