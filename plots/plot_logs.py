@@ -3,13 +3,13 @@ import matplotlib.pyplot as plt
 import os
 
 # Create output directory
-os.makedirs("report/reinforce_nobaseline_nonnorm/images/log", exist_ok=True)
+os.makedirs("report/reinforce_nobaseline_nonnorm_tanh_action/images/log", exist_ok=True)
 
 # Load logs
-mu_log = np.load("logs/mu_log.npy")
-sigma_log = np.load("logs/sigma_log.npy")
-actions_log = np.load("logs/actions_log.npy")
-entropy_log = np.load("logs/entropy_log.npy")
+mu_log = np.load("logs/mu_log_tanh_action.npy")
+sigma_log = np.load("logs/sigma_log_tanh_action.npy")
+actions_log = np.load("logs/actions_log_tanh_action.npy")
+entropy_log = np.load("logs/entropy_log_tanh_action.npy")
 
 # Function to plot 3 separate curves in one plot
 def plot_3d_lines(data, title, ylabel, filename):
@@ -25,7 +25,7 @@ def plot_3d_lines(data, title, ylabel, filename):
     plt.legend()
     plt.grid(True)
     plt.tight_layout()
-    plt.savefig(f"report/reinforce_nobaseline_nonnorm/images/log/{filename}.png", dpi=300)
+    plt.savefig(f"report/reinforce_nobaseline_nonnorm_tanh_action/images/log/{filename}.png", dpi=300)
     plt.close()
 
 
@@ -49,7 +49,7 @@ def plot_averaged_actions(actions, avg_every=10000):
     plt.legend()
     plt.grid(True)
     plt.tight_layout()
-    plt.savefig(f"report/reinforce_nobaseline_nonnorm/images/log/actions_log_avg_{avg_every}.png", dpi=300)
+    plt.savefig(f"report/reinforce_nobaseline_nonnorm_tanh_action/images/log/actions_log_avg_{avg_every}.png", dpi=300)
     plt.close()
 
 
@@ -71,8 +71,8 @@ plt.ylabel("Entropy")
 plt.title("Policy Entropy over Time")
 plt.grid(True)
 plt.tight_layout()
-plt.savefig("report/reinforce_nobaseline_nonnorm/images/log/entropy_log.png", dpi=300)
+plt.savefig("report/reinforce_nobaseline_nonnorm_tanh_action/images/log/entropy_log.png", dpi=300)
 plt.close()
 
 # Plot smoothed/averaged actions
-plot_averaged_actions(actions_log, avg_every=10000)  # or try 1000 / 100000 too
+plot_averaged_actions(actions_log, avg_every=1000)  # or try 1000 / 100000 too

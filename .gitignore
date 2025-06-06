@@ -6,3 +6,4 @@ __pycache__
 */pycache
 mjkey.txt
 logs/actions_log.npy
+logs/actions_log_tanh_action.npy
