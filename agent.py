@@ -133,10 +133,12 @@ class Agent(object):
             return normal_dist.mean, None
 
         else:   # Sample from the distribution
-            action = torch.tanh(normal_dist.sample())  # squash action into [-1, 1]
+            u = normal_dist.sample()
+            action = torch.tanh(u)  # squash into [-1, 1]
 
             # Compute Log probability of the action [ log(p(a[0] AND a[1] AND a[2])) = log(p(a[0])*p(a[1])*p(a[2])) = log(p(a[0])) + log(p(a[1])) + log(p(a[2])) ]
-            action_log_prob = normal_dist.log_prob(action).sum()
+            log_prob = normal_dist.log_prob(u) - torch.log(1 - action.pow(2) + 1e-6)
+            action_log_prob = log_prob.sum()
 
 
 
