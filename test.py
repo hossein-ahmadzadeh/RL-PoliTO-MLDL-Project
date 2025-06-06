@@ -6,6 +6,10 @@ import gym
 
 from env.custom_hopper import *
 from agent import Agent, Policy
+import numpy as np
+import os
+import time
+
 
 def parse_args():
     parser = argparse.ArgumentParser()
@@ -36,7 +40,12 @@ def main():
 
 	agent = Agent(policy, device=args.device)
 
+	# Initialize lists to store returns and times
+	test_returns = []
+	test_times = []
+
 	for episode in range(args.episodes):
+		start_time = time.time()
 		done = False
 		test_reward = 0
 		state = env.reset()
@@ -51,8 +60,19 @@ def main():
 				env.render()
 
 			test_reward += reward
+		
+		test_returns.append(test_reward)
+		end_time = time.time()
+		test_times.append(end_time - start_time)
 
 		print(f"Episode: {episode} | Return: {test_reward}")
+
+
+	os.makedirs("test_analysis", exist_ok=True)
+	
+	# Save the test returns and times
+	np.save("test_analysis/returns_test_model_reinforce_nobaseline_nonnorm.npy", np.array(test_returns))
+	np.save("test_analysis/times_test_model_reinforce_nobaseline_nonnorm.npy", np.array(test_times))
 	
 
 if __name__ == '__main__':
