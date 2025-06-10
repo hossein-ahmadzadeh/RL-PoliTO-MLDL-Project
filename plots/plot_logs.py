@@ -10,10 +10,10 @@ mpl.rcParams['agg.path.chunksize'] = 10000
 os.makedirs("report/reinforce_nobaseline_nonnorm_tanh_action/images/log", exist_ok=True)
 
 # Load logs
-mu_log = np.load("logs/mu_log_tanh_action.npy")
-sigma_log = np.load("logs/sigma_log_tanh_action.npy")
-actions_log = np.load("logs/actions_log_tanh_action.npy")
-entropy_log = np.load("logs/entropy_log_tanh_action.npy")
+mu_log = np.load("logs/model_reinforce_nobaseline_nonnorm_tanh_action/mu_log_tanh_action.npy")
+sigma_log = np.load("logs/model_reinforce_nobaseline_nonnorm_tanh_action/sigma_log_tanh_action.npy")
+actions_log = np.load("logs/model_reinforce_nobaseline_nonnorm_tanh_action/actions_log_tanh_action.npy")
+entropy_log = np.load("logs/model_reinforce_nobaseline_nonnorm_tanh_action/entropy_log_tanh_action.npy")
 
 # Function to plot 3 separate curves in one plot
 def plot_3d_lines(data, title, ylabel, filename):
@@ -79,4 +79,4 @@ plt.savefig("report/reinforce_nobaseline_nonnorm_tanh_action/images/log/entropy_
 plt.close()
 
 # Plot smoothed/averaged actions
-plot_averaged_actions(actions_log, avg_every=10000)  # or try 1000 / 100000 too
+plot_averaged_actions(actions_log, avg_every=1000)  # or try 1000 / 100000 too
