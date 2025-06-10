@@ -52,7 +52,7 @@ def main():
 	all_returns = []	# 🏆 Store returns per episode
 	episode_times = []  # ⏱ Store training time per episode
 	losses = []  # Track loss per episode
-
+	variances = [] 
 	for episode in range(args.n_episodes):
 		start_time = time.time()
 		
@@ -77,6 +77,13 @@ def main():
 		end_time = time.time()
 		all_returns.append(train_reward)
 		episode_times.append(end_time - start_time)
+		# بعد از حلقه while و قبل از if (episode+1)%args.print_every
+		if (episode + 1) % 1000 == 0:
+        # محاسبه واریانس بازده‌ها تا این لحظه
+			if len(all_returns) > 0:
+				current_variance = np.var(all_returns)
+				variances.append(current_variance)
+				print(f'Episode {episode}, Variance of Returns: {current_variance}')
 		
 
 		# Log each 5000 episodes 
@@ -102,6 +109,8 @@ def main():
 	np.save("analysis/returns_per_episode_reinforce_nobaseline_nonnorm_tanh_action.npy", np.array(all_returns))
 	# Save losses
 	np.save("analysis/losses_per_episode_reinforce_nobaseline_nonnorm_tanh_action.npy", np.array(losses))
+	# Save variances
+	np.save("analysis/variances_per_episode_reinforce_nobaseline_nonnorm_tanh_action.npy", np.array(variances)) 
 
 
 	# Save model

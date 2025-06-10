@@ -10,6 +10,7 @@ os.makedirs(output_dir, exist_ok=True)
 returns = np.load("analysis/returns_per_episode_reinforce_nobaseline_nonnorm_tanh_action.npy")
 losses = np.load("analysis/losses_per_episode_reinforce_nobaseline_nonnorm_tanh_action.npy")
 times = np.load("analysis/episode_times_reinforce_nobaseline_nonnorm_tanh_action.npy")
+variances=np.load("analysis/variances_per_episode_reinforce_nobaseline_nonnorm_tanh_action.npy")
 
 
 def moving_average(data, window_size):
@@ -44,3 +45,11 @@ plot_and_save(np.arange(len(losses)), np.cumsum(losses), "Cumulative Loss", "Cum
 plot_and_save(np.arange(len(times)), times, "Episode Time per Episode", "Time (s)", "times_raw")
 plot_and_save(np.arange(len(times) - 99), moving_average(times, 100), "Smoothed Time (avg over 100 episodes)", "Average Time (s)", "times_avg")
 plot_and_save(np.arange(len(times)), np.cumsum(times), "Cumulative Time", "Total Time (s)", "times_cumulative")
+
+import matplotlib.pyplot as plt
+
+# --- Variances ---
+episodes = np.arange(0, len(variances) * 1000, 1000)  # فواصل 1000 اپیزود
+plot_and_save(episodes, variances, "Variance of Returns Over Episodes (REINFORCE on Hopper)", "Variance", "variances_raw")
+plot_and_save(episodes[:-99], moving_average(variances, 100), "Smoothed Variance (avg over 100 episodes)", "Average Variance", "variances_avg")
+plot_and_save(episodes, np.cumsum(variances), "Cumulative Variance", "Cumulative Variance", "variances_cumulative")
