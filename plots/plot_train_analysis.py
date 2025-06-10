@@ -7,9 +7,9 @@ output_dir = "report/reinforce_nobaseline_nonnorm_tanh_action/images/train"
 os.makedirs(output_dir, exist_ok=True)
 
 # Load data
-returns = np.load("analysis/returns_per_episode_reinforce_nobaseline_nonnorm_tanh_action.npy")
-losses = np.load("analysis/losses_per_episode_reinforce_nobaseline_nonnorm_tanh_action.npy")
-times = np.load("analysis/episode_times_reinforce_nobaseline_nonnorm_tanh_action.npy")
+returns = np.load("analysis/model_reinforce_nobaseline_nonnorm_tanh_action/returns_per_episode_reinforce_nobaseline_nonnorm_tanh_action.npy")
+losses = np.load("analysis/model_reinforce_nobaseline_nonnorm_tanh_action/losses_per_episode_reinforce_nobaseline_nonnorm_tanh_action.npy")
+times = np.load("analysis/model_reinforce_nobaseline_nonnorm_tanh_action/episode_times_reinforce_nobaseline_nonnorm_tanh_action.npy")
 
 
 def moving_average(data, window_size):
