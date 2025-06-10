@@ -87,25 +87,40 @@ def main():
 
 	# Ensure directories exist
 	os.makedirs("models", exist_ok=True)
-	os.makedirs("logs/model_reinforce_nobaseline_nonnorm_tanh_action", exist_ok=True)
-	os.makedirs("analysis/model_reinforce_nobaseline_nonnorm_tanh_action", exist_ok=True)
+	os.makedirs("logs/model_reinforce_nobaseline_norm_tanh_action", exist_ok=True)
+	os.makedirs("analysis/model_reinforce_nobaseline_norm_tanh_action", exist_ok=True)
 
 	# Save logs
-	np.save("logs/model_reinforce_nobaseline_nonnorm_tanh_action/mu_log_tanh_action.npy", np.array(agent.mu_log))
-	np.save("logs/model_reinforce_nobaseline_nonnorm_tanh_action/sigma_log_tanh_action.npy", np.array(agent.sigma_log))
-	np.save("logs/model_reinforce_nobaseline_nonnorm_tanh_action/actions_log_tanh_action.npy", np.array(agent.actions_log))
-	np.save("logs/model_reinforce_nobaseline_nonnorm_tanh_action/entropy_log_tanh_action.npy", np.array(agent.entropy_log))
+	np.save("logs/model_reinforce_nobaseline_norm_tanh_action/mu_log_tanh_action.npy", np.array(agent.mu_log))
+	np.save("logs/model_reinforce_nobaseline_norm_tanh_action/sigma_log_tanh_action.npy", np.array(agent.sigma_log))
+	np.save("logs/model_reinforce_nobaseline_norm_tanh_action/actions_log_tanh_action.npy", np.array(agent.actions_log))
+	np.save("logs/model_reinforce_nobaseline_norm_tanh_action/entropy_log_tanh_action.npy", np.array(agent.entropy_log))
+	np.save("logs/model_reinforce_nobaseline_norm_tanh_action/returns_mean_log.npy", np.array(agent.returns_mean_log))
+	np.save("logs/model_reinforce_nobaseline_norm_tanh_action/returns_std_log.npy", np.array(agent.returns_std_log))
+
 
 	# Save episode times
-	np.save("analysis/model_reinforce_nobaseline_nonnorm_tanh_action/episode_times_reinforce_nobaseline_nonnorm_tanh_action.npy", np.array(episode_times))
+	np.save("analysis/model_reinforce_nobaseline_norm_tanh_action/episode_times_reinforce_nobaseline_norm_tanh_action.npy", np.array(episode_times))
 	# Save returns
-	np.save("analysis/model_reinforce_nobaseline_nonnorm_tanh_action/returns_per_episode_reinforce_nobaseline_nonnorm_tanh_action.npy", np.array(all_returns))
+	np.save("analysis/model_reinforce_nobaseline_norm_tanh_action/returns_per_episode_reinforce_nobaseline_norm_tanh_action.npy", np.array(all_returns))
 	# Save losses
-	np.save("analysis/model_reinforce_nobaseline_nonnorm_tanh_action/losses_per_episode_reinforce_nobaseline_nonnorm_tanh_action.npy", np.array(losses))
+	np.save("analysis/model_reinforce_nobaseline_norm_tanh_action/losses_per_episode_reinforce_nobaseline_norm_tanh_action.npy", np.array(losses))
 
+	# Compute variance of returns every 100 episodes
+	returns_np = np.array(all_returns)
+	window_size = 100
+	num_windows = len(returns_np) // window_size
+	returns_var_per_window = np.array([
+		np.var(returns_np[i * window_size : (i + 1) * window_size])
+		for i in range(num_windows)
+	])
+
+	# Save variance per window
+	np.save("analysis/model_reinforce_nobaseline_norm_tanh_action/returns_variance_100.npy", returns_var_per_window)
+	
 
 	# Save model
-	torch.save(agent.policy.state_dict(), "models/model_reinforce_nobaseline_nonnorm_tanh_action.mdl")
+	torch.save(agent.policy.state_dict(), "models/model_reinforce_nobaseline_norm_tanh_action.mdl")
 
 	
 

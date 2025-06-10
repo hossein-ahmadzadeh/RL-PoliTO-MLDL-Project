@@ -88,6 +88,8 @@ class Agent(object):
         self.sigma_log = []      # Stores [σ1, σ2, σ3] per episode
         self.actions_log = []    # Stores [a1, a2, a3] per step
         self.entropy_log = []    # Stores entropy of the action distribution per step
+        self.returns_mean_log = []  # Log mean of returns
+        self.returns_std_log = []   # Log std of returns
 
 
     def update_policy(self):
@@ -103,6 +105,20 @@ class Agent(object):
         # TASK 2:
         #   - compute discounted returns
         returns = discount_rewards(rewards, gamma=self.gamma)
+
+        # Compute mean and std of unnormalized returns
+        returns_mean = returns.mean().item()
+        returns_std = returns.std().item()
+
+        # Log returns statistics for analysis
+        self.returns_mean_log.append(returns_mean)
+        self.returns_std_log.append(returns_std)
+
+        if returns_std > 1e-6:  # Avoid division by near-zero std
+            returns = (returns - returns_mean) / (returns_std + 1e-8)
+        else:
+            returns = returns - returns_mean  # Only subtract mean if std is too small
+
 
         #   - compute policy gradient loss function given actions and returns
         loss = -(action_log_probs * returns).mean()
@@ -136,10 +152,8 @@ class Agent(object):
             u = normal_dist.sample()
             action = torch.tanh(u)  # squash into [-1, 1]
 
-            # Compute Log probability of the action [ log(p(a[0] AND a[1] AND a[2])) = log(p(a[0])*p(a[1])*p(a[2])) = log(p(a[0])) + log(p(a[1])) + log(p(a[2])) ]
             log_prob = normal_dist.log_prob(u) - torch.log(1 - action.pow(2) + 1e-6)
             action_log_prob = log_prob.sum()
-
 
 
             # 🧠 Entropy of the policy
