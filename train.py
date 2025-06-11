@@ -53,6 +53,11 @@ def main():
 	episode_times = []  # ⏱ Store training time per episode
 	losses = []  # Track loss per episode
 
+	smoothed_returns = []     # To store rolling average return (score)
+	returns_var_per_window = []  # To store rolling variance of return
+	returns_window = []       # Buffer for rolling statistics
+	window_size = 100         # Choose 100 for balance
+
 	for episode in range(args.n_episodes):
 		start_time = time.time()
 		
@@ -81,8 +86,23 @@ def main():
 
 		# Log each 5000 episodes 
 		if (episode+1)%args.print_every == 0:
-			print('Training episode:', episode)
-			print('Episode return:', train_reward)
+			print(f"--- Episode {episode+1}/{args.n_episodes} ---")
+			print(f"  Episode Return: {train_reward:.2f}")
+			print(f"  Smoothed Return (last {len(returns_window)}): {avg_return:.2f}")
+			print(f"  Return Variance (last {len(returns_window)}): {returns_var_per_window[-1]:.2f}")
+			print(f"  Loss: {loss:.4f}")
+			print(f"  Time: {end_time - start_time:.2f}s")
+			print("-" * 40)
+		
+		# Update window
+		returns_window.append(train_reward)
+		if len(returns_window) > window_size:
+			returns_window.pop(0)
+
+		# Compute and store rolling stats
+		avg_return = np.mean(returns_window)
+		smoothed_returns.append(avg_return)
+		returns_var_per_window.append(np.var(returns_window))
 
 
 	# Ensure directories exist
@@ -106,17 +126,8 @@ def main():
 	# Save losses
 	np.save("analysis/model_reinforce_nobaseline_norm_tanh_action/losses_per_episode_reinforce_nobaseline_norm_tanh_action.npy", np.array(losses))
 
-	# Compute variance of returns every 100 episodes
-	returns_np = np.array(all_returns)
-	window_size = 100
-	num_windows = len(returns_np) // window_size
-	returns_var_per_window = np.array([
-		np.var(returns_np[i * window_size : (i + 1) * window_size])
-		for i in range(num_windows)
-	])
-
-	# Save variance per window
-	np.save("analysis/model_reinforce_nobaseline_norm_tanh_action/returns_variance_100.npy", returns_var_per_window)
+	np.save("analysis/model_reinforce_nobaseline_norm_tanh_action/returns_smoothed_100.npy", np.array(smoothed_returns))
+	np.save("analysis/model_reinforce_nobaseline_norm_tanh_action/returns_variance_100.npy", np.array(returns_var_per_window))
 	
 
 	# Save model

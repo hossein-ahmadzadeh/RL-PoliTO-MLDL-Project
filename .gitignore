@@ -7,3 +7,4 @@ __pycache__
 mjkey.txt
 logs/model_reinforce_nobaseline_nonnorm/actions_log.npy
 logs/model_reinforce_nobaseline_nonnorm_tanh_action/actions_log_tanh_action.npy
+logs/model_reinforce_nobaseline_norm_tanh_action/actions_log_tanh_action.npy
