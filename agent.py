@@ -83,6 +83,7 @@ class Agent(object):
         self.action_log_probs = []
         self.rewards = []
         self.done = []
+        self.b = 20 
 
         self.mu_log = []         # Stores [μ1, μ2, μ3] per episode
         self.sigma_log = []      # Stores [σ1, σ2, σ3] per episode
@@ -103,6 +104,9 @@ class Agent(object):
         # TASK 2:
         #   - compute discounted returns
         returns = discount_rewards(rewards, gamma=self.gamma)
+        returns = (returns - returns.mean()) / returns.std()                      #whitening
+        #returns = returns                                                        #without baseline
+        returns = returns - self.b
 
         #   - compute policy gradient loss function given actions and returns
         loss = -(action_log_probs * returns).mean()
@@ -133,12 +137,10 @@ class Agent(object):
             return normal_dist.mean, None
 
         else:   # Sample from the distribution
-            u = normal_dist.sample()
-            action = torch.tanh(u)  # squash into [-1, 1]
+            action = normal_dist.sample()
 
             # Compute Log probability of the action [ log(p(a[0] AND a[1] AND a[2])) = log(p(a[0])*p(a[1])*p(a[2])) = log(p(a[0])) + log(p(a[1])) + log(p(a[2])) ]
-            log_prob = normal_dist.log_prob(u) - torch.log(1 - action.pow(2) + 1e-6)
-            action_log_prob = log_prob.sum()
+            action_log_prob = normal_dist.log_prob(action).sum()
 
 
 
@@ -164,11 +166,7 @@ class Agent(object):
             # Save all sampled actions
             self.actions_log.append(action_np.tolist())  # save full [a1, a2, a3] list
 
-            # ⚠️ Warn only if out-of-bounds
-            if np.any(np.abs(action_np) > 1.0):
-                print(f"[WARNING] Out-of-bounds action: {action_np}")
-
-
+            
 
             return action, action_log_prob
 

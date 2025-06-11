@@ -3,13 +3,14 @@ import matplotlib.pyplot as plt
 import os
 
 # Create output directory
-out_dir = "report/reinforce_nobaseline_nonnorm_tanh_action/images/test"
+out_dir = "report/model_reinforce_baseline_nonorm/images/test"
 os.makedirs(out_dir, exist_ok=True)
 
 # Load test data
-returns = np.load("test_analysis/returns_test_model_reinforce_nobaseline_nonnorm_tanh_action.npy")
-times = np.load("test_analysis/times_test_model_reinforce_nobaseline_nonnorm_tanh_action.npy")
-variances=np.load("analysis/variances_per_episode_reinforce_nobaseline_nonnorm_tanh_action.npy")
+returns = np.load("analysis/model_reinforce_baselinee/returns_per_episode_reinforce_beseline.npy")
+
+times = np.load("analysis//model_reinforce_baselinee/episode_times_reinforce_baseline.npy")
+
 
 episodes = np.arange(1, len(returns) + 1)
 
@@ -34,6 +35,4 @@ save_plot(episodes, np.cumsum(returns), "Test Cumulative Return", "Cumulative Re
 save_plot(episodes, times, "Test Time per Episode", "Time (s)", "test_times")
 save_plot(episodes, np.cumsum(times)/episodes, "Test Average Time", "Average Time (s)", "test_times_avg")
 save_plot(episodes, np.cumsum(times), "Test Cumulative Time", "Cumulative Time (s)", "test_times_cumulative")
-
-import matplotlib.pyplot as plt
 

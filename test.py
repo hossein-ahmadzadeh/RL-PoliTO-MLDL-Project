@@ -71,8 +71,8 @@ def main():
 	os.makedirs("test_analysis", exist_ok=True)
 	
 	# Save the test returns and times
-	np.save("test_analysis/returns_test_model_reinforce_nobaseline_nonnorm_tanh_action.npy", np.array(test_returns))
-	np.save("test_analysis/times_test_model_reinforce_nobaseline_nonnorm_tanh_action.npy", np.array(test_times))
+	np.save("test_analysis/returns_test_model_reinforce_baseline.npy", np.array(test_returns))
+	np.save("test_analysis/times_test_model_reinforce_baseline.npy", np.array(test_times))
 	
 
 if __name__ == '__main__':

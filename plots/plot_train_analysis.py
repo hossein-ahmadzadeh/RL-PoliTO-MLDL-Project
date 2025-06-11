@@ -3,14 +3,14 @@ import matplotlib.pyplot as plt
 import os
 
 # Output directory
-output_dir = "report/reinforce_nobaseline_nonnorm_tanh_action/images/train"
+output_dir = "report/model_reinforce_baseline_nonorm/images/train"
 os.makedirs(output_dir, exist_ok=True)
 
 # Load data
-returns = np.load("analysis/returns_per_episode_reinforce_nobaseline_nonnorm_tanh_action.npy")
-losses = np.load("analysis/losses_per_episode_reinforce_nobaseline_nonnorm_tanh_action.npy")
-times = np.load("analysis/episode_times_reinforce_nobaseline_nonnorm_tanh_action.npy")
-variances=np.load("analysis/variances_per_episode_reinforce_nobaseline_nonnorm_tanh_action.npy")
+returns = np.load("analysis/model_reinforce_baselinee/returns_per_episode_reinforce_beseline.npy")
+losses = np.load("analysis/model_reinforce_baselinee/losses_per_episode_reinforce_baseline.npy")
+times = np.load("analysis/model_reinforce_baselinee/episode_times_reinforce_baseline.npy")
+variances=np.load("analysis/model_reinforce_baselinee/variances_per_episode_reinforce_baseline.npy")
 
 
 def moving_average(data, window_size):

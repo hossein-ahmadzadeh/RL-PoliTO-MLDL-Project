@@ -16,8 +16,8 @@ import time
 
 def parse_args():
     parser = argparse.ArgumentParser()
-    parser.add_argument('--n-episodes', default=100000, type=int, help='Number of training episodes')
-    parser.add_argument('--print-every', default=5000, type=int, help='Print info every <> episodes')
+    parser.add_argument('--n-episodes', default=1000, type=int, help='Number of training episodes')
+    parser.add_argument('--print-every', default=500, type=int, help='Print info every <> episodes')
     parser.add_argument('--device', default='cpu', type=str, help='network device [cpu, cuda]')
 
     return parser.parse_args()
@@ -52,7 +52,9 @@ def main():
 	all_returns = []	# 🏆 Store returns per episode
 	episode_times = []  # ⏱ Store training time per episode
 	losses = []  # Track loss per episode
-	variances = [] 
+	variances = []      # Stores the moving window variance of returns
+	returns_window = [] # A buffer to hold returns for the current window
+	window_size = 100   # The size of the moving windo
 	for episode in range(args.n_episodes):
 		start_time = time.time()
 		
@@ -74,47 +76,57 @@ def main():
 		loss = agent.update_policy()
 		losses.append(loss)
 
-		end_time = time.time()
-		all_returns.append(train_reward)
-		episode_times.append(end_time - start_time)
-		# بعد از حلقه while و قبل از if (episode+1)%args.print_every
-		if (episode + 1) % 1000 == 0:
-        # محاسبه واریانس بازده‌ها تا این لحظه
-			if len(all_returns) > 0:
-				current_variance = np.var(all_returns)
-				variances.append(current_variance)
-				print(f'Episode {episode}, Variance of Returns: {current_variance}')
+		end_time = time.time() # End timer for the episode
+		current_episode_time = end_time - start_time
+		all_returns.append(train_reward) # Add current episode's total return to the list
+		episode_times.append(current_episode_time) # Add current episode's time to the list
+		returns_window.append(train_reward) # Add current episode's return to the window
+		if len(returns_window) > window_size:
+			returns_window.pop(0) # Remove the oldest return if the window size is exceeded
+        
+        # Calculate variance only if there are enough samples in the window (at least 2)
+		if len(returns_window) > 1:
+			current_variance_window = np.var(returns_window)
+			variances.append(current_variance_window)
+		else:
+			variances.append(0.0) # If not enough data, set variance to 0 or NaN
 		
 
 		# Log each 5000 episodes 
-		if (episode+1)%args.print_every == 0:
-			print('Training episode:', episode)
-			print('Episode return:', train_reward)
+		if (episode + 1) % args.print_every == 0:
+			print(f'--- Episode {episode + 1}/{args.n_episodes} ---')
+			print(f'  Total Episode Return: {train_reward:.2f}')
+            # Print average return over the current window
+			print(f'  Average Return (last {min(window_size, len(all_returns))} episodes): {np.mean(returns_window):.2f}') 
+            # Print variance of returns over the current window
+			print(f'  Variance of Returns (last {min(window_size, len(returns_window))} episodes): {variances[-1]:.2f}') 
+			print(f'  Policy Loss: {loss:.4f}')
+			print(f'  Episode Time: {current_episode_time:.4f} sec')
+			print("-" * 30)
 
-
+	model_name="testttttt"
 	# Ensure directories exist
 	os.makedirs("models", exist_ok=True)
 	os.makedirs("logs", exist_ok=True)
 	os.makedirs("analysis", exist_ok=True)
 
 	# Save logs
-	np.save("logs/mu_log_tanh_action.npy",     np.array(agent.mu_log))
-	np.save("logs/sigma_log_tanh_action.npy",  np.array(agent.sigma_log))
-	np.save("logs/actions_log_tanh_action.npy", np.array(agent.actions_log))
-	np.save("logs/entropy_log_tanh_action.npy",  np.array(agent.entropy_log))
+	np.save(f"logs/log.npy",     np.array(agent.mu_log))
+	np.save(f"logs/sigma_log.npy",  np.array(agent.sigma_log))
+	np.save(f"logs/entropy_log.npy",  np.array(agent.entropy_log))
 
 	# Save episode times
-	np.save("analysis/episode_times_reinforce_nobaseline_nonnorm_tanh_action.npy", np.array(episode_times))
+	np.save(f"analysis/episode_times_{model_name}.npy", np.array(episode_times))
 	# Save returns
-	np.save("analysis/returns_per_episode_reinforce_nobaseline_nonnorm_tanh_action.npy", np.array(all_returns))
+	np.save(f"analysis/returns_per_episode_{model_name}.npy", np.array(all_returns))
 	# Save losses
-	np.save("analysis/losses_per_episode_reinforce_nobaseline_nonnorm_tanh_action.npy", np.array(losses))
+	np.save(f"analysis/losses_per_episode_{model_name}.npy", np.array(losses))
 	# Save variances
-	np.save("analysis/variances_per_episode_reinforce_nobaseline_nonnorm_tanh_action.npy", np.array(variances)) 
+	np.save(f"analysis/variances_per_episode_{model_name}.npy", np.array(variances)) 
 
 
 	# Save model
-	torch.save(agent.policy.state_dict(), "models/model_reinforce_nobaseline_nonnorm_tanh_action.mdl")
+	torch.save(agent.policy.state_dict(), f"models/{model_name}.mdl")
 
 	
 
