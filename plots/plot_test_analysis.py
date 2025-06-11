@@ -3,13 +3,21 @@ import matplotlib.pyplot as plt
 import os
 
 # Create output directory
-out_dir = "report/model_reinforce_baseline_nonorm/images/test"
+model_name = "te"
+analysis_dir = f"analysis/{model_name}"
+out_dir = f"report/{model_name}/images/test"
 os.makedirs(out_dir, exist_ok=True)
 
-# Load test data
-returns = np.load("analysis/model_reinforce_baselinee/returns_per_episode_reinforce_beseline.npy")
+def safe_load(path):
+    if not os.path.exists(path):
+        print(f"[WARNING] File not found: {path}")
+        return None
+    return np.load(path)
 
-times = np.load("analysis//model_reinforce_baselinee/episode_times_reinforce_baseline.npy")
+# Load test data
+
+returns = safe_load(f"{analysis_dir}/returns_per_episode.npy")
+times = safe_load(f"{analysis_dir}/episode_times.npy")
 
 
 episodes = np.arange(1, len(returns) + 1)
@@ -26,13 +34,19 @@ def save_plot(x, y, title, ylabel, filename, color='blue'):
     plt.savefig(f"{out_dir}/{filename}.png", dpi=300)
     plt.close()
 
-# Test Returns
-save_plot(episodes, returns, "Test Returns per Episode", "Return", "test_returns")
-save_plot(episodes, np.cumsum(returns)/episodes, "Test Average Return", "Average Return", "test_returns_avg")
-save_plot(episodes, np.cumsum(returns), "Test Cumulative Return", "Cumulative Return", "test_returns_cumulative")
+if returns is not None and times is not None:
+    episodes = np.arange(1, len(returns) + 1)
 
-# Test Times
-save_plot(episodes, times, "Test Time per Episode", "Time (s)", "test_times")
-save_plot(episodes, np.cumsum(times)/episodes, "Test Average Time", "Average Time (s)", "test_times_avg")
-save_plot(episodes, np.cumsum(times), "Test Cumulative Time", "Cumulative Time (s)", "test_times_cumulative")
+    # Test Returns
+    save_plot(episodes, returns, "Test Returns per Episode", "Return", "test_returns")
+    save_plot(episodes, np.cumsum(returns)/episodes, "Test Average Return", "Average Return", "test_returns_avg")
+    save_plot(episodes, np.cumsum(returns), "Test Cumulative Return", "Cumulative Return", "test_returns_cumulative")
 
+    # Test Times
+    save_plot(episodes, times, "Test Time per Episode", "Time (s)", "test_times")
+    save_plot(episodes, np.cumsum(times)/episodes, "Test Average Time", "Average Time (s)", "test_times_avg")
+    save_plot(episodes, np.cumsum(times), "Test Cumulative Time", "Cumulative Time (s)", "test_times_cumulative")
+
+    print(f"✅ Test plots saved to: {out_dir}")
+else:
+    print("❌ One or more required files are missing.")

@@ -13,7 +13,7 @@ import time
 
 def parse_args():
     parser = argparse.ArgumentParser()
-    parser.add_argument('--model', default=None, type=str, help='Model path')
+    parser.add_argument('--model', default="models/te.mdl", type=str, help='Model path')
     parser.add_argument('--device', default='cpu', type=str, help='network device [cpu, cuda]')
     parser.add_argument('--render', default=False, action='store_true', help='Render the simulator')
     parser.add_argument('--episodes', default=10, type=int, help='Number of test episodes')
@@ -71,9 +71,20 @@ def main():
 	os.makedirs("test_analysis", exist_ok=True)
 	
 	# Save the test returns and times
-	np.save("test_analysis/returns_test_model_reinforce_baseline.npy", np.array(test_returns))
-	np.save("test_analysis/times_test_model_reinforce_baseline.npy", np.array(test_times))
 	
+	
+	model_name = os.path.splitext(os.path.basename(args.model))[0]
+
+	
+	output_dir = "test_analysis"
+	os.makedirs(output_dir, exist_ok=True)
+
+
+	np.save(f"{output_dir}/returns_test_{model_name}.npy", np.array(test_returns))
+	np.save(f"{output_dir}/times_test_{model_name}.npy", np.array(test_times))
+
+	print(f"✅ Test results saved to: {output_dir} as returns_test_{model_name}.npy and times_test_{model_name}.npy")
+
 
 if __name__ == '__main__':
 	main()

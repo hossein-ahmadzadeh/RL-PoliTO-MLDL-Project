@@ -85,12 +85,17 @@ class Agent(object):
         self.done = []
         self.b = 20 
 
-        self.mu_log = []         # Stores [μ1, μ2, μ3] per episode
-        self.sigma_log = []      # Stores [σ1, σ2, σ3] per episode
-        self.actions_log = []    # Stores [a1, a2, a3] per step
-        self.entropy_log = []    # Stores entropy of the action distribution per step
+        self.mu_log = []     # Stores [μ1, μ2, μ3] per episode
+        self.sigma_log = []  # Stores [σ1, σ2, σ3] per episode
+        self.actions_log = [] # Stores [a1, a2, a3] per step
+        self.entropy_log = [] # Stores entropy of the action distribution per step
         self.returns_variance_log = [] # Stores variance of discounted returns (for PG)
-        #self.advantages_variance_log = [] # Stores variance of advantage terms (for AC)
+        self.advantages_variance_log = [] # Stores variance of advantage terms
+        self.returns_mean_log = []   # Log mean of returns
+        self.returns_std_log = []    # Log std of returns
+        self.advantages_mean_log = [] # Log mean of advantages
+        self.advantages_std_log = []  # Log std of advantages
+
 
 
     def update_policy(self):
@@ -105,18 +110,37 @@ class Agent(object):
         #
         # TASK 2:
         #   - compute discounted returns
+          # 1. Compute discounted returns (G_t)
         returns = discount_rewards(rewards, gamma=self.gamma)
-        #returns = (returns - returns.mean()) / returns.std()                      #whitening
-        #returns = returns                                                        #without baseline
-        returns = returns - self.b
-
-        # Calculate and log variance of discounted returns (after baseline)
-        if len(returns) > 1: # Ensure there's enough data to calculate variance
-            returns_variance = torch.var(returns).item()
-            self.returns_variance_log.append(returns_variance)
-        else:
-            self.returns_variance_log.append(0.0) # Append 0 if variance cannot be computed
         
+        # Log mean and std of raw discounted returns for analysis
+        self.returns_mean_log.append(returns.mean().item())
+        self.returns_std_log.append(returns.std().item())
+
+        # 2. Compute Advantages (A_t = G_t - b) using the constant baseline
+        # You correctly had `returns = returns - self.b` here, which computes the advantage.
+        # Let's explicitly call it advantages to be clear.
+        advantages = returns - self.b
+
+        # Log mean and std of unnormalized advantages
+        self.advantages_mean_log.append(advantages.mean().item())
+        self.advantages_std_log.append(advantages.std().item())
+
+        # Calculate and log variance of unnormalized advantages (after baseline)
+        if len(advantages) > 1: # Ensure there's enough data to calculate variance
+            advantages_variance = torch.var(advantages).item()
+            self.advantages_variance_log.append(advantages_variance)
+        else:
+            self.advantages_variance_log.append(0.0) # Append 0 if variance cannot be computed
+            
+
+       # 3. Normalize Advantages (A_t_normalized = (A_t - mean(A)) / std(A))
+        # This is the "whitening" step for advantages.
+        if advantages.std() > 1e-6:  # Avoid division by near-zero std
+            advantages = (advantages - advantages.mean()) / (advantages.std() + 1e-8)
+        else:
+            # If std is too small, just subtract the mean (centering)
+            advantages = advantages - advantages.mean()
        
         #   - compute policy gradient loss function given actions and returns
         loss = -(action_log_probs * returns).mean()
@@ -147,15 +171,13 @@ class Agent(object):
             return normal_dist.mean, None
 
         else:   # Sample from the distribution
-            u = normal_dist.sample()
-            action = torch.tanh(u)  # squash into [-1, 1]
-            
+            action = normal_dist.sample()
+
             # Compute Log probability of the action [ log(p(a[0] AND a[1] AND a[2])) = log(p(a[0])*p(a[1])*p(a[2])) = log(p(a[0])) + log(p(a[1])) + log(p(a[2])) ]
             action_log_prob = normal_dist.log_prob(action).sum()
 
-
-
-            # 🧠 Entropy of the policy
+        
+              # 🧠 Entropy of the policy
             entropy = normal_dist.entropy().sum().item()
             self.entropy_log.append(entropy)
 
@@ -165,20 +187,18 @@ class Agent(object):
             sigma = normal_dist.stddev.detach().cpu().numpy()
             action_np = action.detach().cpu().numpy()
 
-
-            # ⚠️ Monitor μ and σ only on first state per episode (optional via a flag)
+        
+             # ⚠️ Monitor μ and σ only on first state per episode (optional via a flag)
             if len(self.states) == 0:  # first step of the episode
                 if np.any(np.isnan(mu)) or np.any(np.isinf(mu)) or np.any(np.abs(mu) > 100) or np.any(sigma > 5):
                     print(f"[WARNING] Unusual μ or σ -> μ: {mu}, σ: {sigma}")
                 self.mu_log.append(mu.tolist())
                 self.sigma_log.append(sigma.tolist())
             
-
-            # Save all sampled actions
+               # Save all sampled actions
             self.actions_log.append(action_np.tolist())  # save full [a1, a2, a3] list
 
             
-
             return action, action_log_prob
 
 

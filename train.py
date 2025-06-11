@@ -16,8 +16,8 @@ import time
 
 def parse_args():
     parser = argparse.ArgumentParser()
-    parser.add_argument('--n-episodes', default=1000, type=int, help='Number of training episodes')
-    parser.add_argument('--print-every', default=500, type=int, help='Print info every <> episodes')
+    parser.add_argument('--n-episodes', default=100, type=int, help='Number of training episodes')
+    parser.add_argument('--print-every', default=100, type=int, help='Print info every <> episodes')
     parser.add_argument('--device', default='cpu', type=str, help='network device [cpu, cuda]')
 
     return parser.parse_args()
@@ -52,9 +52,23 @@ def main():
 	all_returns = []	# 🏆 Store returns per episode
 	episode_times = []  # ⏱ Store training time per episode
 	losses = []  # Track loss per episode
-	variances = []      # Stores the moving window variance of returns
+	# Logs for the moving window variance of episode returns
+	variances_episode_return_window =  []      # Stores the moving window variance of returns
 	returns_window = [] # A buffer to hold returns for the current window
 	window_size = 100   # The size of the moving windo
+	# Logs retrieved from agent.py (metrics calculated inside agent.update_polic
+	agent_returns_mean_log_per_episode = []
+	agent_returns_std_log_per_episode = []
+	agent_advantages_mean_log_per_episode = []
+	agent_advantages_std_log_per_episode = []
+	agent_returns_variances_per_episode = [] # Variance of discounted returns (not advantages)
+# Stores variance of discounted returns (from Agent.update_policy)
+# Agent's internal logs (mu, sigma, entropy) that are appended in get_action
+	agent_mu_log = []
+	agent_sigma_log = []
+	agent_entropy_log = []
+
+
 	for episode in range(args.n_episodes):
 		start_time = time.time()
 		
@@ -79,54 +93,89 @@ def main():
 		end_time = time.time() # End timer for the episode
 		current_episode_time = end_time - start_time
 		all_returns.append(train_reward) # Add current episode's total return to the list
-		episode_times.append(current_episode_time) # Add current episode's time to the list
-		returns_window.append(train_reward) # Add current episode's return to the window
+		episode_times.append(current_episode_time)
+		 # --- Collect Metrics for Logging ---
+        # Collect agent's internal logs for this episode (last value)
+		agent_returns_mean_log_per_episode.append(agent.returns_mean_log[-1] if agent.returns_mean_log else 0.0)
+		agent_returns_std_log_per_episode.append(agent.returns_std_log[-1] if agent.returns_std_log else 0.0)
+		agent_advantages_mean_log_per_episode.append(agent.advantages_mean_log[-1] if agent.advantages_mean_log else 0.0)
+		agent_advantages_std_log_per_episode.append(agent.advantages_std_log[-1])
+		 # This is the variance of discounted returns (not advantages) from the agent
+		agent_returns_variances_per_episode.append(agent.returns_variance_log[-1] if agent.returns_variance_log else 0.0)
+
+        # Append all collected mu, sigma, entropy from agent (these are per-step, not per-episode)
+		agent_mu_log.extend(agent.mu_log)
+		agent_sigma_log.extend(agent.sigma_log)
+		agent_entropy_log.extend(agent.entropy_log)
+        
+        # Clear agent's internal per-step logs after copying them
+		agent.mu_log = []
+		agent.sigma_log = []
+		agent.entropy_log = []
+
+		 # Add current episode's time to the list
+		returns_window.append(train_reward)
 		if len(returns_window) > window_size:
-			returns_window.pop(0) # Remove the oldest return if the window size is exceeded
+			returns_window.pop(0) # Remove the oldest return if window size is exceeded
         
         # Calculate variance only if there are enough samples in the window (at least 2)
 		if len(returns_window) > 1:
 			current_variance_window = np.var(returns_window)
-			variances.append(current_variance_window)
+			variances_episode_return_window.append(current_variance_window)
 		else:
-			variances.append(0.0) # If not enough data, set variance to 0 or NaN
-		
+			variances_episode_return_window.append(0.0) # If not enough data, set variance to 0.0
+
+        # Retrieve and store the variance logged by the agent (from returns_pg, now named 'returns')
+		if agent.returns_variance_log: # Check if there are any logged variances
+			agent_returns_variances_per_episode.append(agent.returns_variance_log[-1])
+		else:
+			agent_returns_variances_per_episode.append(0.0)
 
 		# Log each 5000 episodes 
 		if (episode + 1) % args.print_every == 0:
 			print(f'--- Episode {episode + 1}/{args.n_episodes} ---')
 			print(f'  Total Episode Return: {train_reward:.2f}')
-            # Print average return over the current window
 			print(f'  Average Return (last {min(window_size, len(all_returns))} episodes): {np.mean(returns_window):.2f}') 
-            # Print variance of returns over the current window
-			print(f'  Variance of Returns (last {min(window_size, len(returns_window))} episodes): {variances[-1]:.2f}') 
+			print(f'  Variance of Total Episode Returns (last {min(window_size, len(returns_window))} episodes): {variances_episode_return_window[-1]:.2f}')
+            # Print the new variance from agent.py
+			print(f'  Variance of Discounted Returns (from Agent): {agent_returns_variances_per_episode[-1]:.2f}')
 			print(f'  Policy Loss: {loss:.4f}')
 			print(f'  Episode Time: {current_episode_time:.4f} sec')
 			print("-" * 30)
 
-	model_name="testttttt"
-	# Ensure directories exist
+	model_name = "te"
+	# Define paths
+	log_dir = os.path.join("logs", model_name)
+	analysis_dir = os.path.join("analysis", model_name)
+	model_path = os.path.join("models", f"{model_name}.mdl")
+
+	# Ensure all subdirectories exist
+	os.makedirs(log_dir, exist_ok=True)
+	os.makedirs(analysis_dir, exist_ok=True)
 	os.makedirs("models", exist_ok=True)
-	os.makedirs("logs", exist_ok=True)
-	os.makedirs("analysis", exist_ok=True)
 
-	# Save logs
-	np.save(f"logs/log.npy",     np.array(agent.mu_log))
-	np.save(f"logs/sigma_log.npy",  np.array(agent.sigma_log))
-	np.save(f"logs/entropy_log.npy",  np.array(agent.entropy_log))
+		
+	
 
-	# Save episode times
-	np.save(f"analysis/episode_times_{model_name}.npy", np.array(episode_times))
-	# Save returns
-	np.save(f"analysis/returns_per_episode_{model_name}.npy", np.array(all_returns))
-	# Save losses
-	np.save(f"analysis/losses_per_episode_{model_name}.npy", np.array(losses))
-	# Save variances
-	np.save(f"analysis/variances_per_episode_{model_name}.npy", np.array(variances)) 
+	np.save(f"{log_dir}/mu_log.npy", np.array(agent_mu_log))
+	np.save(f"{log_dir}/sigma_log.npy", np.array(agent_sigma_log))
+	np.save(f"{log_dir}/entropy_log.npy", np.array(agent_entropy_log))
 
+	np.save(f"{analysis_dir}/episode_times.npy", np.array(episode_times))
+	np.save(f"{analysis_dir}/returns_per_episode.npy", np.array(all_returns))
+	np.save(f"{analysis_dir}/losses_per_episode.npy", np.array(losses))
+	np.save(f"{analysis_dir}/variances_episode_return_window.npy", np.array(variances_episode_return_window))
+	np.save(f"{analysis_dir}/agent_returns_variances.npy", np.array(agent_returns_variances_per_episode))
 
-	# Save model
-	torch.save(agent.policy.state_dict(), f"models/{model_name}.mdl")
+	
+	np.save(f"{log_dir}/agent_returns_mean_log_per_episode.npy", np.array(agent_returns_mean_log_per_episode))
+	np.save(f"{log_dir}/agent_returns_std_log_per_episode.npy", np.array(agent_returns_std_log_per_episode))
+	np.save(f"{log_dir}/agent_advantages_mean_log_per_episode.npy", np.array(agent_advantages_mean_log_per_episode))
+	np.save(f"{log_dir}/agent_advantages_std_log_per_episode.npy", np.array(agent_advantages_std_log_per_episode))
+
+	
+	torch.save(agent.policy.state_dict(), model_path)
+
 
 	
 
