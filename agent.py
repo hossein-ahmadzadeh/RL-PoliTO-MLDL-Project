@@ -83,6 +83,7 @@ class Agent(object):
         self.action_log_probs = []
         self.rewards = []
         self.done = []
+        self.b = 20
 
         self.mu_log = []         # Stores [μ1, μ2, μ3] per episode
         self.sigma_log = []      # Stores [σ1, σ2, σ3] per episode
@@ -90,6 +91,8 @@ class Agent(object):
         self.entropy_log = []    # Stores entropy of the action distribution per step
         self.returns_mean_log = []  # Log mean of returns
         self.returns_std_log = []   # Log std of returns
+        self.advantages_log = []
+        self.advantages_variance_log = []
 
 
     def update_policy(self):
@@ -120,8 +123,13 @@ class Agent(object):
             returns = returns - returns_mean  # Only subtract mean if std is too small
 
 
+        advantages = returns - self.b
+        adv_np = advantages.detach().cpu().numpy()
+        self.advantages_log.append(adv_np)
+        self.advantages_variance_log.append(np.var(adv_np))
+
         #   - compute policy gradient loss function given actions and returns
-        loss = -(action_log_probs * returns).mean()
+        loss = -(action_log_probs * advantages).mean()
 
         #   - compute gradients and step the optimizer
         self.optimizer.zero_grad()
@@ -169,7 +177,7 @@ class Agent(object):
 
             # ⚠️ Monitor μ and σ only on first state per episode (optional via a flag)
             if len(self.states) == 0:  # first step of the episode
-                if np.any(np.isnan(mu)) or np.any(np.isinf(mu)) or np.any(np.abs(mu) > 100) or np.any(sigma > 5):
+                if np.any(np.isnan(mu)) or np.any(np.isinf(mu)) or np.any(np.abs(mu) > 100) or np.any(sigma > 5)or np.any(sigma < 0.3):
                     print(f"[WARNING] Unusual μ or σ -> μ: {mu}, σ: {sigma}")
                 self.mu_log.append(mu.tolist())
                 self.sigma_log.append(sigma.tolist())

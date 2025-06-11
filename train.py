@@ -49,7 +49,7 @@ def main():
     #
 
 
-	all_returns = []	# 🏆 Store returns per episode
+	all_rewards = []	# 🏆 Store rewards (scores) per episode
 	episode_times = []  # ⏱ Store training time per episode
 	losses = []  # Track loss per episode
 
@@ -80,16 +80,16 @@ def main():
 		losses.append(loss)
 
 		end_time = time.time()
-		all_returns.append(train_reward)
+		all_rewards.append(train_reward)
 		episode_times.append(end_time - start_time)
 		
 
 		# Log each 5000 episodes 
 		if (episode+1)%args.print_every == 0:
 			print(f"--- Episode {episode+1}/{args.n_episodes} ---")
-			print(f"  Episode Return: {train_reward:.2f}")
-			print(f"  Smoothed Return (last {len(returns_window)}): {avg_return:.2f}")
-			print(f"  Return Variance (last {len(returns_window)}): {returns_var_per_window[-1]:.2f}")
+			print(f"  Episode Reward: {train_reward:.2f}")
+			print(f"  Smoothed Reward (last {len(returns_window)}): {avg_return:.2f}")
+			print(f"  Reward Variance (last {len(returns_window)}): {returns_var_per_window[-1]:.2f}")
 			print(f"  Loss: {loss:.4f}")
 			print(f"  Time: {end_time - start_time:.2f}s")
 			print("-" * 40)
@@ -107,31 +107,35 @@ def main():
 
 	# Ensure directories exist
 	os.makedirs("models", exist_ok=True)
-	os.makedirs("logs/model_reinforce_nobaseline_norm_tanh_action", exist_ok=True)
-	os.makedirs("analysis/model_reinforce_nobaseline_norm_tanh_action", exist_ok=True)
+	os.makedirs("logs/model_reinforce_with_baseline_twenty_norm_tanh_action", exist_ok=True)
+	os.makedirs("analysis/model_reinforce_with_baseline_twenty_norm_tanh_action", exist_ok=True)
 
 	# Save logs
-	np.save("logs/model_reinforce_nobaseline_norm_tanh_action/mu_log_tanh_action.npy", np.array(agent.mu_log))
-	np.save("logs/model_reinforce_nobaseline_norm_tanh_action/sigma_log_tanh_action.npy", np.array(agent.sigma_log))
-	np.save("logs/model_reinforce_nobaseline_norm_tanh_action/actions_log_tanh_action.npy", np.array(agent.actions_log))
-	np.save("logs/model_reinforce_nobaseline_norm_tanh_action/entropy_log_tanh_action.npy", np.array(agent.entropy_log))
-	np.save("logs/model_reinforce_nobaseline_norm_tanh_action/returns_mean_log.npy", np.array(agent.returns_mean_log))
-	np.save("logs/model_reinforce_nobaseline_norm_tanh_action/returns_std_log.npy", np.array(agent.returns_std_log))
+	np.save("logs/model_reinforce_with_baseline_twenty_norm_tanh_action/mu_log.npy", np.array(agent.mu_log))
+	np.save("logs/model_reinforce_with_baseline_twenty_norm_tanh_action/sigma_log.npy", np.array(agent.sigma_log))
+	np.save("logs/model_reinforce_with_baseline_twenty_norm_tanh_action/actions_log.npy", np.array(agent.actions_log))
+	np.save("logs/model_reinforce_with_baseline_twenty_norm_tanh_action/entropy_log.npy", np.array(agent.entropy_log))
+	np.save("logs/model_reinforce_with_baseline_twenty_norm_tanh_action/returns_mean_log.npy", np.array(agent.returns_mean_log))
+	np.save("logs/model_reinforce_with_baseline_twenty_norm_tanh_action/returns_std_log.npy", np.array(agent.returns_std_log))
+
+	np.save("logs/model_reinforce_with_baseline_twenty_norm_tanh_action/advantages_log.npy", np.array(agent.advantages_log))
 
 
 	# Save episode times
-	np.save("analysis/model_reinforce_nobaseline_norm_tanh_action/episode_times_reinforce_nobaseline_norm_tanh_action.npy", np.array(episode_times))
+	np.save("analysis/model_reinforce_with_baseline_twenty_norm_tanh_action/episode_times.npy", np.array(episode_times))
 	# Save returns
-	np.save("analysis/model_reinforce_nobaseline_norm_tanh_action/returns_per_episode_reinforce_nobaseline_norm_tanh_action.npy", np.array(all_returns))
+	np.save("analysis/model_reinforce_with_baseline_twenty_norm_tanh_action/episode_rewards.npy", np.array(all_rewards))
 	# Save losses
-	np.save("analysis/model_reinforce_nobaseline_norm_tanh_action/losses_per_episode_reinforce_nobaseline_norm_tanh_action.npy", np.array(losses))
+	np.save("analysis/model_reinforce_with_baseline_twenty_norm_tanh_action/losses.npy", np.array(losses))
 
-	np.save("analysis/model_reinforce_nobaseline_norm_tanh_action/returns_smoothed_100.npy", np.array(smoothed_returns))
-	np.save("analysis/model_reinforce_nobaseline_norm_tanh_action/returns_variance_100.npy", np.array(returns_var_per_window))
+	np.save("analysis/model_reinforce_with_baseline_twenty_norm_tanh_action/episode_rewards_smoothed_100.npy", np.array(smoothed_returns))
+	np.save("analysis/model_reinforce_with_baseline_twenty_norm_tanh_action/episode_rewards_variance_100.npy", np.array(returns_var_per_window))
+
+	np.save("analysis/model_reinforce_with_baseline_twenty_norm_tanh_action/advantages_variance_log.npy", np.array(agent.advantages_variance_log))
 	
 
 	# Save model
-	torch.save(agent.policy.state_dict(), "models/model_reinforce_nobaseline_norm_tanh_action.mdl")
+	torch.save(agent.policy.state_dict(), "models/model_reinforce_with_baseline_twenty_norm_tanh_action.mdl")
 
 	
 
