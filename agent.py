@@ -160,9 +160,9 @@ class Agent(object):
         critic_loss = F.mse_loss(state_values, td_target.detach())
 
         # === Total loss: actor + critic ===
-        # Note: You can also use a weighted sum if you want to balance actor and critic losses 
+        # Note: We can also use a weighted sum if we want to balance actor and critic losses 
         # === Total loss: actor + 0.5 * critic ===
-        loss = actor_loss + critic_loss
+        loss = actor_loss + 0.5 * critic_loss
 
         #   - compute gradients and step the optimizer
         self.optimizer.zero_grad()
