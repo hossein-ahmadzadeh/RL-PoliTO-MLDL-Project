@@ -115,8 +115,6 @@ def main():
 	np.save("logs/model_reinforce_with_actor_critic_norm_tanh_action/sigma_log.npy", np.array(agent.sigma_log))
 	np.save("logs/model_reinforce_with_actor_critic_norm_tanh_action/actions_log.npy", np.array(agent.actions_log))
 	np.save("logs/model_reinforce_with_actor_critic_norm_tanh_action/entropy_log.npy", np.array(agent.entropy_log))
-	np.save("logs/model_reinforce_with_actor_critic_norm_tanh_action/returns_mean_log.npy", np.array(agent.returns_mean_log))
-	np.save("logs/model_reinforce_with_actor_critic_norm_tanh_action/returns_std_log.npy", np.array(agent.returns_std_log))
 
 	np.save("logs/model_reinforce_with_actor_critic_norm_tanh_action/advantages_mean_log.npy", np.array(agent.advantages_mean_log))
 	np.save("logs/model_reinforce_with_actor_critic_norm_tanh_action/advantages_std_log.npy", np.array(agent.advantages_std_log))
