@@ -120,7 +120,7 @@ class Agent(object):
         # 2. Compute Advantages (A_t = G_t - b) using the constant baseline
         # You correctly had `returns = returns - self.b` here, which computes the advantage.
         # Let's explicitly call it advantages to be clear.
-        advantages = returns - self.b
+        advantages = returns 
 
         # Log mean and std of unnormalized advantages
         self.advantages_mean_log.append(advantages.mean().item())
@@ -143,7 +143,7 @@ class Agent(object):
             advantages = advantages - advantages.mean()
        
         #   - compute policy gradient loss function given actions and returns
-        loss = -(action_log_probs * returns).mean()
+        loss = -(action_log_probs * advantages).mean()
 
         #   - compute gradients and step the optimizer
         self.optimizer.zero_grad()
