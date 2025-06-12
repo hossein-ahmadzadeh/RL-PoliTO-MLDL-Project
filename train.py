@@ -107,50 +107,43 @@ def main():
 
 	# Ensure directories exist
 	os.makedirs("models", exist_ok=True)
-	os.makedirs("logs/model_reinforce_with_baseline_twenty_norm_tanh_action", exist_ok=True)
-	os.makedirs("analysis/model_reinforce_with_baseline_twenty_norm_tanh_action", exist_ok=True)
+	os.makedirs("logs/model_reinforce_with_actor_critic_norm_tanh_action", exist_ok=True)
+	os.makedirs("analysis/model_reinforce_with_actor_critic_norm_tanh_action", exist_ok=True)
 
 	# Save logs
-	np.save("logs/model_reinforce_with_baseline_twenty_norm_tanh_action/mu_log.npy", np.array(agent.mu_log))
-	np.save("logs/model_reinforce_with_baseline_twenty_norm_tanh_action/sigma_log.npy", np.array(agent.sigma_log))
-	np.save("logs/model_reinforce_with_baseline_twenty_norm_tanh_action/actions_log.npy", np.array(agent.actions_log))
-	np.save("logs/model_reinforce_with_baseline_twenty_norm_tanh_action/entropy_log.npy", np.array(agent.entropy_log))
-	np.save("logs/model_reinforce_with_baseline_twenty_norm_tanh_action/returns_mean_log.npy", np.array(agent.returns_mean_log))
-	np.save("logs/model_reinforce_with_baseline_twenty_norm_tanh_action/returns_std_log.npy", np.array(agent.returns_std_log))
+	np.save("logs/model_reinforce_with_actor_critic_norm_tanh_action/mu_log.npy", np.array(agent.mu_log))
+	np.save("logs/model_reinforce_with_actor_critic_norm_tanh_action/sigma_log.npy", np.array(agent.sigma_log))
+	np.save("logs/model_reinforce_with_actor_critic_norm_tanh_action/actions_log.npy", np.array(agent.actions_log))
+	np.save("logs/model_reinforce_with_actor_critic_norm_tanh_action/entropy_log.npy", np.array(agent.entropy_log))
+	np.save("logs/model_reinforce_with_actor_critic_norm_tanh_action/returns_mean_log.npy", np.array(agent.returns_mean_log))
+	np.save("logs/model_reinforce_with_actor_critic_norm_tanh_action/returns_std_log.npy", np.array(agent.returns_std_log))
 
-	np.save("logs/model_reinforce_with_baseline_twenty_norm_tanh_action/advantages_mean_log.npy", np.array(agent.advantages_mean_log))
-	np.save("logs/model_reinforce_with_baseline_twenty_norm_tanh_action/advantages_std_log.npy", np.array(agent.advantages_std_log))
+	np.save("logs/model_reinforce_with_actor_critic_norm_tanh_action/advantages_mean_log.npy", np.array(agent.advantages_mean_log))
+	np.save("logs/model_reinforce_with_actor_critic_norm_tanh_action/advantages_std_log.npy", np.array(agent.advantages_std_log))
+	np.save("logs/model_reinforce_with_actor_critic_norm_tanh_action/td_target_mean_log.npy", np.array(agent.td_target_mean_log))
+	np.save("logs/model_reinforce_with_actor_critic_norm_tanh_action/td_target_std_log.npy", np.array(agent.td_target_std_log))
 
-	np.save("logs/model_reinforce_with_baseline_twenty_norm_tanh_action/advantages_log.npy", np.array(agent.advantages_log, dtype=object))
+	np.save("logs/model_reinforce_with_actor_critic_norm_tanh_action/advantages_log.npy", np.array(agent.advantages_log, dtype=object))
+	np.save("logs/model_reinforce_with_actor_critic_norm_tanh_action/td_target_log.npy", np.array(agent.td_target_log, dtype=object))
 
 
 	# Save episode times
-	np.save("analysis/model_reinforce_with_baseline_twenty_norm_tanh_action/episode_times.npy", np.array(episode_times))
+	np.save("analysis/model_reinforce_with_actor_critic_norm_tanh_action/episode_times.npy", np.array(episode_times))
 	# Save returns
-	np.save("analysis/model_reinforce_with_baseline_twenty_norm_tanh_action/episode_rewards.npy", np.array(all_rewards))
+	np.save("analysis/model_reinforce_with_actor_critic_norm_tanh_action/episode_rewards.npy", np.array(all_rewards))
 	# Save losses
-	np.save("analysis/model_reinforce_with_baseline_twenty_norm_tanh_action/losses.npy", np.array(losses))
+	np.save("analysis/model_reinforce_with_actor_critic_norm_tanh_action/losses.npy", np.array(losses))
 
-	np.save("analysis/model_reinforce_with_baseline_twenty_norm_tanh_action/episode_rewards_smoothed_100.npy", np.array(smoothed_returns))
-	np.save("analysis/model_reinforce_with_baseline_twenty_norm_tanh_action/episode_rewards_variance_100.npy", np.array(returns_var_per_window))
+	np.save("analysis/model_reinforce_with_actor_critic_norm_tanh_action/episode_rewards_smoothed_100.npy", np.array(smoothed_returns))
+	np.save("analysis/model_reinforce_with_actor_critic_norm_tanh_action/episode_rewards_variance_100.npy", np.array(returns_var_per_window))
 
-	np.save("analysis/model_reinforce_with_baseline_twenty_norm_tanh_action/advantages_variance_log.npy", np.array(agent.advantages_variance_log))
-	
+	np.save("analysis/model_reinforce_with_actor_critic_norm_tanh_action/advantages_variance_log.npy", np.array(agent.advantages_variance_log))
+	np.save("analysis/model_reinforce_with_actor_critic_norm_tanh_action/td_target_variance_log.npy", np.array(agent.td_target_variance_log))
 
-	# Compute variance of returns every 100 episodes
-	rewards_np = np.array(all_rewards)
-	num_windows = len(rewards_np) // window_size
-	rewarad_var_per_window = np.array([
-		np.var(rewards_np[i * window_size : (i + 1) * window_size])
-		for i in range(num_windows)
-	])
-
-	# Save variance per window
-	np.save("analysis/model_reinforce_with_baseline_twenty_norm_tanh_action/return_variance_per_100.npy", rewarad_var_per_window)
 
 
 	# Save model
-	torch.save(agent.policy.state_dict(), "models/model_reinforce_with_baseline_twenty_norm_tanh_action.mdl")
+	torch.save(agent.policy.state_dict(), "models/model_reinforce_with_actor_critic_norm_tanh_action.mdl")
 
 	
 

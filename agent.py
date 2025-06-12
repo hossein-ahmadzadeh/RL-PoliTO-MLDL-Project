@@ -40,6 +40,12 @@ class Policy(torch.nn.Module):
         # TASK 3: critic network for actor-critic algorithm
 
 
+        self.fc1_critic = nn.Linear(state_space, self.hidden)
+        self.fc2_critic = nn.Linear(self.hidden, self.hidden)
+        self.fc3_critic_value = nn.Linear(self.hidden, 1)
+
+
+
         self.init_weights()
 
 
@@ -67,8 +73,11 @@ class Policy(torch.nn.Module):
         """
         # TASK 3: forward in the critic network
 
+        x_critic = self.tanh(self.fc1_critic(x))
+        x_critic = self.tanh(self.fc2_critic(x_critic))
+        state_value = fc3_critic_value(x_critic).squeeze(-1)
         
-        return normal_dist
+        return normal_dist, state_value
 
 
 class Agent(object):
@@ -83,14 +92,18 @@ class Agent(object):
         self.action_log_probs = []
         self.rewards = []
         self.done = []
-        self.b = 20
+        # self.b = 2 # Constant baseline for advantage calculation
 
         self.mu_log = []         # Stores [μ1, μ2, μ3] per episode
         self.sigma_log = []      # Stores [σ1, σ2, σ3] per episode
         self.actions_log = []    # Stores [a1, a2, a3] per step
         self.entropy_log = []    # Stores entropy of the action distribution per step
-        self.returns_mean_log = []  # Log mean of returns
-        self.returns_std_log = []   # Log std of returns
+
+        self.td_target_log = []
+        self.td_target_variance_log = []
+        self.td_target_mean_log = []  # Log mean of returns
+        self.td_target_std_log = []   # Log std of returns
+
         self.advantages_log = []
         self.advantages_variance_log = []
         self.advantages_mean_log = [] # Log mean of advantages
@@ -106,25 +119,18 @@ class Agent(object):
 
         self.states, self.next_states, self.action_log_probs, self.rewards, self.done = [], [], [], [], []
 
-        #
-        # TASK 2:
-        #   - compute discounted returns
-        returns = discount_rewards(rewards, gamma=self.gamma)
+        # === Get state-values from critic ===
+        with torch.no_grad():
+            _, state_values = self.policy(states)
+            _, next_state_values = self.policy(next_states)
 
-        # Compute mean and std of unnormalized returns
-        returns_mean = returns.mean().item()
-        returns_std = returns.std().item()
 
-        # Log returns statistics for analysis
-        self.returns_mean_log.append(returns_mean)
-        self.returns_std_log.append(returns_std)
+        # Compute TD targets
+        td_target = rewards + self.gamma * next_state_values * (1 - done)
         
-        advantages = returns - self.b
-        adv_np = advantages.detach().cpu().numpy()
-        self.advantages_log.append(adv_np)
-        self.advantages_variance_log.append(np.var(adv_np))
 
-        
+        # === Compute Advantage: A(s) = G - V(s) ===
+        advantages = td_target - state_values
         advantages_mean = advantages.mean().item()
         advantages_std = advantages.std().item()
 
@@ -134,13 +140,29 @@ class Agent(object):
         else:
             advantages = advantages - advantages_mean  # Only subtract mean if std is too small
 
-        # Log advantages statistics for analysis
+
+        # === Logging for analysis ===
+        self.td_target_log.append(td_target.detach().cpu().numpy())
+        self.td_target_variance_log.append(np.var(td_target.cpu().numpy()))
+        self.td_target_mean_log.append(td_target.mean().item())
+        self.td_target_std_log.append(td_target.std().item())
+
+        self.advantages_log.append(advantages.detach().cpu().numpy())
+        self.advantages_variance_log.append(np.var(advantages.cpu().numpy()))
         self.advantages_mean_log.append(advantages_mean)
         self.advantages_std_log.append(advantages_std)
+        
 
+        # === Actor loss ===
+        actor_loss = -(action_log_probs * advantages.detach()).mean()
 
-        #   - compute policy gradient loss function given actions and returns
-        loss = -(action_log_probs * advantages).mean()
+        # Critic loss (regression: V(s) ≈ TD target)
+        critic_loss = F.mse_loss(state_values, td_target.detach())
+
+        # === Total loss: actor + critic ===
+        # Note: You can also use a weighted sum if you want to balance actor and critic losses 
+        # === Total loss: actor + 0.5 * critic ===
+        loss = actor_loss + critic_loss
 
         #   - compute gradients and step the optimizer
         self.optimizer.zero_grad()
@@ -162,7 +184,7 @@ class Agent(object):
         """ state -> action (3-d), action_log_densities """
         x = torch.from_numpy(state).float().to(self.train_device)
 
-        normal_dist = self.policy(x)
+        normal_dist, _ = self.policy(x)
 
         if evaluation:  # Return mean
             return normal_dist.mean, None
@@ -200,7 +222,6 @@ class Agent(object):
             # ⚠️ Warn only if out-of-bounds
             if np.any(np.abs(action_np) > 1.0):
                 print(f"[WARNING] Out-of-bounds action: {action_np}")
-
 
 
             return action, action_log_prob
