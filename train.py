@@ -75,7 +75,7 @@ def main():
 			agent.store_outcome(previous_state, state, action_probabilities, reward, done)
 
 			train_reward += reward
-		
+			
 		loss = agent.update_policy()
 		losses.append(loss)
 

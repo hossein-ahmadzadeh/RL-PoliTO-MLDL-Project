@@ -64,7 +64,8 @@ class Policy(torch.nn.Module):
         x_actor = self.tanh(self.fc2_actor(x_actor))
         action_mean = self.fc3_actor_mean(x_actor)
 
-        sigma = self.sigma_activation(self.sigma)
+        # Ensure sigma is in a reasonable range
+        sigma = torch.clamp(self.sigma_activation(self.sigma), min=0.3, max=2.0) 
         normal_dist = Normal(action_mean, sigma)
 
 
@@ -121,8 +122,9 @@ class Agent(object):
 
         # === Get state-values from critic ===
         with torch.no_grad():
-            _, state_values = self.policy(states)
             _, next_state_values = self.policy(next_states)
+
+        _, state_values = self.policy(states)
 
 
         # Compute TD targets
@@ -143,12 +145,12 @@ class Agent(object):
 
         # === Logging for analysis ===
         self.td_target_log.append(td_target.detach().cpu().numpy())
-        self.td_target_variance_log.append(np.var(td_target.cpu().numpy()))
+        self.td_target_variance_log.append(np.var(td_target.detach().cpu().numpy()))
         self.td_target_mean_log.append(td_target.mean().item())
         self.td_target_std_log.append(td_target.std().item())
 
         self.advantages_log.append(advantages.detach().cpu().numpy())
-        self.advantages_variance_log.append(np.var(advantages.cpu().numpy()))
+        self.advantages_variance_log.append(np.var(advantages.detach().cpu().numpy()))
         self.advantages_mean_log.append(advantages_mean)
         self.advantages_std_log.append(advantages_std)
         
