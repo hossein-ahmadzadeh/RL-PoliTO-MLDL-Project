@@ -6,7 +6,7 @@ import matplotlib as mpl
 mpl.rcParams['agg.path.chunksize'] = 10000
 
 # === Paths ===
-model_name = "model_reinforce_with_baseline_twenty_norm_tanh_action"
+model_name = "model_reinforce_with_actor_critic_norm_tanh_action"
 log_dir = f"logs/{model_name}"
 output_dir = f"report/{model_name}/images/log"
 os.makedirs(output_dir, exist_ok=True)
@@ -16,11 +16,12 @@ mu_log = np.load(f"{log_dir}/mu_log.npy")
 sigma_log = np.load(f"{log_dir}/sigma_log.npy")
 actions_log = np.load(f"{log_dir}/actions_log.npy")
 entropy_log = np.load(f"{log_dir}/entropy_log.npy")
-returns_mean_log = np.load(f"{log_dir}/returns_mean_log.npy")
-returns_std_log = np.load(f"{log_dir}/returns_std_log.npy")
+td_target_mean_log = np.load(f"{log_dir}/td_target_mean_log.npy")
+td_target_std_log = np.load(f"{log_dir}/td_target_std_log.npy")
 advantages_mean_log = np.load(f"{log_dir}/advantages_mean_log.npy")
 advantages_std_log = np.load(f"{log_dir}/advantages_std_log.npy")
 advantages_log = np.load(f"{log_dir}/advantages_log.npy", allow_pickle=True)
+td_target_log = np.load(f"{log_dir}/td_target_log.npy", allow_pickle=True)
 
 # === Plot helpers ===
 def plot_3d_lines(data, title, ylabel, filename):
@@ -79,25 +80,25 @@ plt.close()
 # Averaged actions
 plot_averaged_actions(actions_log, avg_every=1000)
 
-# Return stats
+# TD Target stats
 plt.figure(figsize=(12, 5))
-plt.plot(returns_mean_log, label="Mean of Returns", color='orange')
+plt.plot(td_target_mean_log, label="Mean of TD Target", color='orange')
 plt.xlabel("Episode")
 plt.ylabel("Mean")
-plt.title("Mean of Discounted Returns")
+plt.title("Mean of TD Target")
 plt.grid(True)
 plt.tight_layout()
-plt.savefig(f"{output_dir}/returns_mean_log.png", dpi=300)
+plt.savefig(f"{output_dir}/td_target_mean_log.png", dpi=300)
 plt.close()
 
 plt.figure(figsize=(12, 5))
-plt.plot(returns_std_log, label="Std Dev of Returns", color='teal')
+plt.plot(td_target_std_log, label="Std Dev of TD Target", color='teal')
 plt.xlabel("Episode")
 plt.ylabel("Std Dev")
-plt.title("Std Dev of Discounted Returns")
+plt.title("Std Dev of TD Target")
 plt.grid(True)
 plt.tight_layout()
-plt.savefig(f"{output_dir}/returns_std_log.png", dpi=300)
+plt.savefig(f"{output_dir}/td_target_std_log.png", dpi=300)
 plt.close()
 
 # Advantage stats
@@ -119,4 +120,28 @@ plt.title("Std Dev of Advantage per Episode")
 plt.grid(True)
 plt.tight_layout()
 plt.savefig(f"{output_dir}/advantages_std_log.png", dpi=300)
+plt.close()
+
+# === Plot: TD Target Values per Episode ===
+plt.figure(figsize=(12, 5))
+for i, td in enumerate(td_target_log):
+    plt.plot(td, color='orange', alpha=0.1)  # Light transparency
+plt.xlabel("Time Step")
+plt.ylabel("TD Target")
+plt.title("TD Target Values per Episode")
+plt.grid(True)
+plt.tight_layout()
+plt.savefig(f"{output_dir}/td_target_log.png", dpi=300)
+plt.close()
+
+# === Plot: Advantage Values per Episode ===
+plt.figure(figsize=(12, 5))
+for i, adv in enumerate(advantages_log):
+    plt.plot(adv, color='crimson', alpha=0.1)
+plt.xlabel("Time Step")
+plt.ylabel("Advantage")
+plt.title("Advantage Values per Episode")
+plt.grid(True)
+plt.tight_layout()
+plt.savefig(f"{output_dir}/advantages_log.png", dpi=300)
 plt.close()

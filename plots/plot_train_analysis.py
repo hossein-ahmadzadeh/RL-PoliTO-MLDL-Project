@@ -3,7 +3,7 @@ import matplotlib.pyplot as plt
 import os
 
 # === Settings ===
-model_name = "model_reinforce_with_baseline_twenty_norm_tanh_action"
+model_name = "model_reinforce_with_actor_critic_norm_tanh_action"
 analysis_dir = f"analysis/{model_name}"
 out_dir = f"report/{model_name}/images/train"
 os.makedirs(out_dir, exist_ok=True)
@@ -13,8 +13,8 @@ returns = np.load(f"{analysis_dir}/episode_rewards.npy")
 losses = np.load(f"{analysis_dir}/losses.npy")
 times = np.load(f"{analysis_dir}/episode_times.npy")
 rolling_var = np.load(f"{analysis_dir}/episode_rewards_variance_100.npy")
-chunked_var = np.load(f"{analysis_dir}/return_variance_per_100.npy")
 adv_var_log = np.load(f"{analysis_dir}/advantages_variance_log.npy")
+td_var_log = np.load(f"{analysis_dir}/td_target_variance_log.npy")
 smoothed_rewards = np.load(f"{analysis_dir}/episode_rewards_smoothed_100.npy")
 
 episodes = np.arange(1, len(returns) + 1)
@@ -49,8 +49,9 @@ save_plot(episodes, np.cumsum(times), "Cumulative Time", "Total Time (s)", "time
 
 # === Plot: Reward Variance ===
 save_plot(np.arange(1, len(rolling_var) + 1), rolling_var, "Reward Variance (rolling window)", "Variance", "episode_rewards_variance_rolling", color="purple")
-x_chunked = np.arange(1, len(chunked_var) + 1) * 100
-save_plot(x_chunked, chunked_var, "Reward Variance (chunked every 100)", "Variance", "reward_variance_chunked", color="orange")
 
 # === Plot: Advantage Variance ===
 save_plot(np.arange(1, len(adv_var_log) + 1), adv_var_log, "Advantage Variance (per episode)", "Variance", "advantages_variance_log", color="darkred")
+
+# === Plot: TD Target Variance ===
+save_plot(np.arange(1, len(td_var_log) + 1), td_var_log, "TD Target Variance (per episode)", "Variance", "td_target_variance_log", color="olive")
