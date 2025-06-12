@@ -68,11 +68,11 @@ def main():
 		print(f"Episode: {episode} | Return: {test_reward}")
 
 
-	os.makedirs("test_analysis/model_reinforce_nobaseline_norm_tanh_action", exist_ok=True)
+	os.makedirs("test_analysis/model_reinforce_with_baseline_twenty_norm_tanh_action", exist_ok=True)
 	
 	# Save the test returns and times
-	np.save("test_analysis/model_reinforce_nobaseline_norm_tanh_action/returns_test_model_reinforce_nobaseline_norm_tanh_action.npy", np.array(test_returns))
-	np.save("test_analysis/model_reinforce_nobaseline_norm_tanh_action/times_test_model_reinforce_nobaseline_norm_tanh_action.npy", np.array(test_times))
+	np.save("test_analysis/model_reinforce_with_baseline_twenty_norm_tanh_action/returns_test_model_reinforce_with_baseline_twenty_norm_tanh_action.npy", np.array(test_returns))
+	np.save("test_analysis/model_reinforce_with_baseline_twenty_norm_tanh_action/times_test_model_reinforce_with_baseline_twenty_norm_tanh_action.npy", np.array(test_times))
 	
 
 if __name__ == '__main__':
