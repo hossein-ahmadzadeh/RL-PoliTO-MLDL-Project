@@ -118,7 +118,10 @@ def main():
 	np.save("logs/model_reinforce_with_baseline_twenty_norm_tanh_action/returns_mean_log.npy", np.array(agent.returns_mean_log))
 	np.save("logs/model_reinforce_with_baseline_twenty_norm_tanh_action/returns_std_log.npy", np.array(agent.returns_std_log))
 
-	np.save("logs/model_reinforce_with_baseline_twenty_norm_tanh_action/advantages_log.npy", np.array(agent.advantages_log))
+	np.save("logs/model_reinforce_with_baseline_twenty_norm_tanh_action/advantages_mean_log.npy", np.array(agent.advantages_mean_log))
+	np.save("logs/model_reinforce_with_baseline_twenty_norm_tanh_action/advantages_std_log.npy", np.array(agent.advantages_std_log))
+
+	np.save("logs/model_reinforce_with_baseline_twenty_norm_tanh_action/advantages_log.npy", np.array(agent.advantages_log, dtype=object))
 
 
 	# Save episode times
@@ -133,6 +136,18 @@ def main():
 
 	np.save("analysis/model_reinforce_with_baseline_twenty_norm_tanh_action/advantages_variance_log.npy", np.array(agent.advantages_variance_log))
 	
+
+	# Compute variance of returns every 100 episodes
+	rewards_np = np.array(all_rewards)
+	num_windows = len(rewards_np) // window_size
+	rewarad_var_per_window = np.array([
+		np.var(rewards_np[i * window_size : (i + 1) * window_size])
+		for i in range(num_windows)
+	])
+
+	# Save variance per window
+	np.save("analysis/model_reinforce_with_baseline_twenty_norm_tanh_action/return_variance_per_100.npy", rewarad_var_per_window)
+
 
 	# Save model
 	torch.save(agent.policy.state_dict(), "models/model_reinforce_with_baseline_twenty_norm_tanh_action.mdl")

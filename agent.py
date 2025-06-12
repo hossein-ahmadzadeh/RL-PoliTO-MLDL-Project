@@ -93,6 +93,8 @@ class Agent(object):
         self.returns_std_log = []   # Log std of returns
         self.advantages_log = []
         self.advantages_variance_log = []
+        self.advantages_mean_log = [] # Log mean of advantages
+        self.advantages_std_log = []  # Log std of advantages
 
 
     def update_policy(self):
@@ -116,17 +118,26 @@ class Agent(object):
         # Log returns statistics for analysis
         self.returns_mean_log.append(returns_mean)
         self.returns_std_log.append(returns_std)
-
-        if returns_std > 1e-6:  # Avoid division by near-zero std
-            returns = (returns - returns_mean) / (returns_std + 1e-8)
-        else:
-            returns = returns - returns_mean  # Only subtract mean if std is too small
-
-
+        
         advantages = returns - self.b
         adv_np = advantages.detach().cpu().numpy()
         self.advantages_log.append(adv_np)
         self.advantages_variance_log.append(np.var(adv_np))
+
+        
+        advantages_mean = advantages.mean().item()
+        advantages_std = advantages.std().item()
+
+
+        if advantages_std > 1e-6:  # Avoid division by near-zero std
+            advantages = (advantages - advantages_mean) / (advantages_std + 1e-8)
+        else:
+            advantages = advantages - advantages_mean  # Only subtract mean if std is too small
+
+        # Log advantages statistics for analysis
+        self.advantages_mean_log.append(advantages_mean)
+        self.advantages_std_log.append(advantages_std)
+
 
         #   - compute policy gradient loss function given actions and returns
         loss = -(action_log_probs * advantages).mean()
