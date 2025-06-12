@@ -40,9 +40,9 @@ class Policy(torch.nn.Module):
         # TASK 3: critic network for actor-critic algorithm
 
 
-        self.fc1_critic = nn.Linear(state_space, self.hidden)
-        self.fc2_critic = nn.Linear(self.hidden, self.hidden)
-        self.fc3_critic_value = nn.Linear(self.hidden, 1)
+        self.fc1_critic = torch.nn.Linear(state_space, self.hidden)
+        self.fc2_critic = torch.nn.Linear(self.hidden, self.hidden)
+        self.fc3_critic_value = torch.nn.Linear(self.hidden, 1)
 
 
 
