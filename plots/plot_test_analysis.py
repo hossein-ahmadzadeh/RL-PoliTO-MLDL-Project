@@ -3,12 +3,12 @@ import matplotlib.pyplot as plt
 import os
 
 # Create output directory
-out_dir = "report/reinforce_nobaseline_nonnorm_tanh_action/images/test"
+out_dir = "report/model_reinforce_with_baseline_twenty_norm_tanh_action/images/test"
 os.makedirs(out_dir, exist_ok=True)
 
 # Load test data
-returns = np.load("test_analysis/model_reinforce_nobaseline_nonnorm_tanh_action/returns_test_model_reinforce_nobaseline_nonnorm_tanh_action.npy")
-times = np.load("test_analysis/model_reinforce_nobaseline_nonnorm_tanh_action/times_test_model_reinforce_nobaseline_nonnorm_tanh_action.npy")
+returns = np.load("test_analysis/model_reinforce_with_baseline_twenty_norm_tanh_action/returns_test_model_reinforce_with_baseline_twenty_norm_tanh_action.npy")
+times = np.load("test_analysis/model_reinforce_with_baseline_twenty_norm_tanh_action/times_test_model_reinforce_with_baseline_twenty_norm_tanh_action.npy")
 
 episodes = np.arange(1, len(returns) + 1)
 
