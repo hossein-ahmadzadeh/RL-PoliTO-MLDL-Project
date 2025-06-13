@@ -3,7 +3,7 @@ import matplotlib.pyplot as plt
 import os
 
 # Create output directory
-model_name = "te"
+model_name = "REINFORCE-b"
 analysis_dir = f"analysis/{model_name}"
 out_dir = f"report/{model_name}/images/test"
 os.makedirs(out_dir, exist_ok=True)

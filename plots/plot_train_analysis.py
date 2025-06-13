@@ -2,7 +2,7 @@ import os
 import numpy as np
 import matplotlib.pyplot as plt
 
-model_name = "te"
+model_name = "REINFORCE"
 log_dir = f"logs/{model_name}"
 analysis_dir = f"analysis/{model_name}"
 output_dir = f"report/{model_name}/images/train"

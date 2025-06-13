@@ -16,8 +16,8 @@ import time
 
 def parse_args():
     parser = argparse.ArgumentParser()
-    parser.add_argument('--n-episodes', default=1000, type=int, help='Number of training episodes')
-    parser.add_argument('--print-every', default=500, type=int, help='Print info every <> episodes')
+    parser.add_argument('--n-episodes', default=100000, type=int, help='Number of training episodes')
+    parser.add_argument('--print-every', default=5000, type=int, help='Print info every <> episodes')
     parser.add_argument('--device', default='cpu', type=str, help='network device [cpu, cuda]')
 
     return parser.parse_args()
@@ -144,7 +144,7 @@ def main():
 			print(f'  Episode Time: {current_episode_time:.4f} sec')
 			print("-" * 30)
 
-	model_name = ""
+	model_name = "REINFORCE-b"
 	# Define paths
 	log_dir = os.path.join("logs", model_name)
 	analysis_dir = os.path.join("analysis", model_name)
