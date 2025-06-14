@@ -5,10 +5,13 @@ import matplotlib as mpl
 
 mpl.rcParams['agg.path.chunksize'] = 10000
 
-# === Paths ===
-model_name = "model_reinforce_with_actor_critic_norm_tanh_action"
-log_dir = f"logs/{model_name}"
-output_dir = f"report/{model_name}/images/log"
+# === Model & Directory Settings ===
+model_name = "model_actor_critic_norm_tanh_entropy"  # Change this to switch models
+base_log_dir = "logs"
+base_report_dir = "report"
+
+log_dir = os.path.join(base_log_dir, model_name)
+output_dir = os.path.join(base_report_dir, model_name, "images", "log")
 os.makedirs(output_dir, exist_ok=True)
 
 # === Load logs ===
@@ -37,7 +40,7 @@ def plot_3d_lines(data, title, ylabel, filename):
     plt.legend()
     plt.grid(True)
     plt.tight_layout()
-    plt.savefig(f"{output_dir}/{filename}.png", dpi=300)
+    plt.savefig(os.path.join(output_dir, f"{filename}.png"), dpi=300)
     plt.close()
 
 def plot_averaged_actions(actions, avg_every=1000):
@@ -58,7 +61,7 @@ def plot_averaged_actions(actions, avg_every=1000):
     plt.legend()
     plt.grid(True)
     plt.tight_layout()
-    plt.savefig(f"{output_dir}/actions_log_avg_{avg_every}.png", dpi=300)
+    plt.savefig(os.path.join(output_dir, f"actions_log_avg_{avg_every}.png"), dpi=300)
     plt.close()
 
 # === Plotting ===
@@ -74,7 +77,7 @@ plt.ylabel("Entropy")
 plt.title("Policy Entropy")
 plt.grid(True)
 plt.tight_layout()
-plt.savefig(f"{output_dir}/entropy_log.png", dpi=300)
+plt.savefig(os.path.join(output_dir, "entropy_log.png"), dpi=300)
 plt.close()
 
 # Averaged actions
@@ -88,7 +91,7 @@ plt.ylabel("Mean")
 plt.title("Mean of TD Target")
 plt.grid(True)
 plt.tight_layout()
-plt.savefig(f"{output_dir}/td_target_mean_log.png", dpi=300)
+plt.savefig(os.path.join(output_dir, "td_target_mean_log.png"), dpi=300)
 plt.close()
 
 plt.figure(figsize=(12, 5))
@@ -98,7 +101,7 @@ plt.ylabel("Std Dev")
 plt.title("Std Dev of TD Target")
 plt.grid(True)
 plt.tight_layout()
-plt.savefig(f"{output_dir}/td_target_std_log.png", dpi=300)
+plt.savefig(os.path.join(output_dir, "td_target_std_log.png"), dpi=300)
 plt.close()
 
 # Advantage stats
@@ -109,7 +112,7 @@ plt.ylabel("Mean")
 plt.title("Mean of Advantage per Episode")
 plt.grid(True)
 plt.tight_layout()
-plt.savefig(f"{output_dir}/advantages_mean_log.png", dpi=300)
+plt.savefig(os.path.join(output_dir, "advantages_mean_log.png"), dpi=300)
 plt.close()
 
 plt.figure(figsize=(12, 5))
@@ -119,29 +122,29 @@ plt.ylabel("Std Dev")
 plt.title("Std Dev of Advantage per Episode")
 plt.grid(True)
 plt.tight_layout()
-plt.savefig(f"{output_dir}/advantages_std_log.png", dpi=300)
+plt.savefig(os.path.join(output_dir, "advantages_std_log.png"), dpi=300)
 plt.close()
 
-# === Plot: TD Target Values per Episode ===
+# TD Target log
 plt.figure(figsize=(12, 5))
-for i, td in enumerate(td_target_log):
-    plt.plot(td, color='orange', alpha=0.1)  # Light transparency
+for td in td_target_log:
+    plt.plot(td, color='orange', alpha=0.1)
 plt.xlabel("Time Step")
 plt.ylabel("TD Target")
 plt.title("TD Target Values per Episode")
 plt.grid(True)
 plt.tight_layout()
-plt.savefig(f"{output_dir}/td_target_log.png", dpi=300)
+plt.savefig(os.path.join(output_dir, "td_target_log.png"), dpi=300)
 plt.close()
 
-# === Plot: Advantage Values per Episode ===
+# Advantage log
 plt.figure(figsize=(12, 5))
-for i, adv in enumerate(advantages_log):
+for adv in advantages_log:
     plt.plot(adv, color='crimson', alpha=0.1)
 plt.xlabel("Time Step")
 plt.ylabel("Advantage")
 plt.title("Advantage Values per Episode")
 plt.grid(True)
 plt.tight_layout()
-plt.savefig(f"{output_dir}/advantages_log.png", dpi=300)
+plt.savefig(os.path.join(output_dir, "advantages_log.png"), dpi=300)
 plt.close()

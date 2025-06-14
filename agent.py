@@ -65,7 +65,7 @@ class Policy(torch.nn.Module):
         action_mean = self.fc3_actor_mean(x_actor)
 
         # Ensure sigma is in a reasonable range
-        sigma = torch.clamp(self.sigma_activation(self.sigma), min=0.3, max=2.0) 
+        sigma = self.sigma_activation(self.sigma) + 1e-6
         normal_dist = Normal(action_mean, sigma)
 
 
@@ -93,7 +93,7 @@ class Agent(object):
         self.action_log_probs = []
         self.rewards = []
         self.done = []
-        # self.b = 2 # Constant baseline for advantage calculation
+        self.beta = 5e-3  # Entropy regularization coefficient
 
         self.mu_log = []         # Stores [μ1, μ2, μ3] per episode
         self.sigma_log = []      # Stores [σ1, σ2, σ3] per episode
@@ -123,10 +123,12 @@ class Agent(object):
         # === Get state-values from critic ===
         with torch.no_grad():
             _, next_state_values = self.policy(next_states)
+            
+        dist, state_values = self.policy(states)
 
-        _, state_values = self.policy(states)
 
-
+        entropy = dist.entropy().sum(dim=-1).mean()
+        
         # Compute TD targets
         td_target = rewards + self.gamma * next_state_values * (1 - done)
         
@@ -150,7 +152,9 @@ class Agent(object):
         self.td_target_std_log.append(td_target.std().item())
 
         self.advantages_log.append(advantages.detach().cpu().numpy())
-        self.advantages_variance_log.append(np.var(advantages.detach().cpu().numpy()))
+        # Log variance of advantages before normalization
+        self.advantages_variance_log.append(np.var((td_target - state_values).detach().cpu().numpy()))
+
         self.advantages_mean_log.append(advantages_mean)
         self.advantages_std_log.append(advantages_std)
         
@@ -164,7 +168,7 @@ class Agent(object):
         # === Total loss: actor + critic ===
         # Note: We can also use a weighted sum if we want to balance actor and critic losses 
         # === Total loss: actor + 0.5 * critic ===
-        loss = actor_loss + 0.5 * critic_loss
+        loss = actor_loss + (0.5 * critic_loss) - (self.beta * entropy) # Add entropy term for exploration
 
         #   - compute gradients and step the optimizer
         self.optimizer.zero_grad()
@@ -199,7 +203,7 @@ class Agent(object):
             action_log_prob = log_prob.sum()
 
 
-            # 🧠 Entropy of the policy
+            # Entropy of the policy
             entropy = normal_dist.entropy().sum().item()
             self.entropy_log.append(entropy)
 
@@ -210,7 +214,7 @@ class Agent(object):
             action_np = action.detach().cpu().numpy()
 
 
-            # ⚠️ Monitor μ and σ only on first state per episode (optional via a flag)
+            # Monitor μ and σ only on first state per episode (optional via a flag)
             if len(self.states) == 0:  # first step of the episode
                 if np.any(np.isnan(mu)) or np.any(np.isinf(mu)) or np.any(np.abs(mu) > 100) or np.any(sigma > 5)or np.any(sigma < 0.3):
                     print(f"[WARNING] Unusual μ or σ -> μ: {mu}, σ: {sigma}")
@@ -221,7 +225,7 @@ class Agent(object):
             # Save all sampled actions
             self.actions_log.append(action_np.tolist())  # save full [a1, a2, a3] list
 
-            # ⚠️ Warn only if out-of-bounds
+            # Warn only if out-of-bounds
             if np.any(np.abs(action_np) > 1.0):
                 print(f"[WARNING] Out-of-bounds action: {action_np}")
 

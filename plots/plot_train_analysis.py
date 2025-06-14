@@ -2,11 +2,13 @@ import numpy as np
 import matplotlib.pyplot as plt
 import os
 
-# === Settings ===
-model_name = "model_reinforce_with_actor_critic_norm_tanh_action"
+# === Configurable model name ===
+model_name = "model_actor_critic_norm_tanh_entropy"  # Change this to switch models
+
+# === Paths ===
 analysis_dir = f"analysis/{model_name}"
-out_dir = f"report/{model_name}/images/train"
-os.makedirs(out_dir, exist_ok=True)
+output_dir = f"report/{model_name}/images/train"
+os.makedirs(output_dir, exist_ok=True)
 
 # === Load data ===
 returns = np.load(f"{analysis_dir}/episode_rewards.npy")
@@ -28,7 +30,7 @@ def save_plot(x, y, title, ylabel, filename, color='blue'):
     plt.title(title)
     plt.grid(True)
     plt.tight_layout()
-    plt.savefig(f"{out_dir}/{filename}.png", dpi=300)
+    plt.savefig(f"{output_dir}/{filename}.png", dpi=300)
     plt.close()
 
 # === Plot: Rewards ===
