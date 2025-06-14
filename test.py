@@ -1,15 +1,13 @@
 """Test an RL agent on the OpenAI Gym Hopper environment"""
 import argparse
-
 import torch
 import gym
-
-from env.custom_hopper import *
-from agent import Agent, Policy
 import numpy as np
 import os
 import time
 
+from env.custom_hopper import *
+from agent import Agent, Policy
 
 def parse_args():
     parser = argparse.ArgumentParser()
@@ -22,58 +20,54 @@ def parse_args():
 
 args = parse_args()
 
+model_name = "model_actor_critic_norm_tanh_entropy"	 # Change this to switch models
+model_path = args.model or f"models/{model_name}.mdl"
+test_output_dir = f"test_analysis/{model_name}"
+os.makedirs(test_output_dir, exist_ok=True)
 
 def main():
+    env = gym.make('CustomHopper-source-v0')
+    # env = gym.make('CustomHopper-target-v0')
 
-	env = gym.make('CustomHopper-source-v0')
-	# env = gym.make('CustomHopper-target-v0')
+    print('Action space:', env.action_space)
+    print('State space:', env.observation_space)
+    print('Dynamics parameters:', env.get_parameters())
 
-	print('Action space:', env.action_space)
-	print('State space:', env.observation_space)
-	print('Dynamics parameters:', env.get_parameters())
-	
-	observation_space_dim = env.observation_space.shape[-1]
-	action_space_dim = env.action_space.shape[-1]
+    obs_dim = env.observation_space.shape[-1]
+    act_dim = env.action_space.shape[-1]
 
-	policy = Policy(observation_space_dim, action_space_dim)
-	policy.load_state_dict(torch.load(args.model), strict=True)
+    policy = Policy(obs_dim, act_dim)
+    policy.load_state_dict(torch.load(model_path), strict=True)
 
-	agent = Agent(policy, device=args.device)
+    agent = Agent(policy, device=args.device)
 
-	# Initialize lists to store returns and times
-	test_returns = []
-	test_times = []
+    test_returns = []
+    test_times = []
 
-	for episode in range(args.episodes):
-		start_time = time.time()
-		done = False
-		test_reward = 0
-		state = env.reset()
+    for episode in range(args.episodes):
+        start_time = time.time()
+        done = False
+        test_reward = 0
+        state = env.reset()
 
-		while not done:
+        while not done:
+            action, _ = agent.get_action(state, evaluation=True)
+            state, reward, done, info = env.step(action.detach().cpu().numpy())
 
-			action, _ = agent.get_action(state, evaluation=True)
+            if args.render:
+                env.render()
 
-			state, reward, done, info = env.step(action.detach().cpu().numpy())
+            test_reward += reward
 
-			if args.render:
-				env.render()
+        test_returns.append(test_reward)
+        test_times.append(time.time() - start_time)
 
-			test_reward += reward
-		
-		test_returns.append(test_reward)
-		end_time = time.time()
-		test_times.append(end_time - start_time)
+        print(f"Episode: {episode} | Return: {test_reward:.2f}")
 
-		print(f"Episode: {episode} | Return: {test_reward}")
+    # Save returns and durations
+    np.save(f"{test_output_dir}/returns_test_{model_name}.npy", np.array(test_returns))
+    np.save(f"{test_output_dir}/times_test_{model_name}.npy", np.array(test_times))
 
-
-	os.makedirs("test_analysis/model_reinforce_with_actor_critic_norm_tanh_action", exist_ok=True)
-	
-	# Save the test returns and times
-	np.save("test_analysis/model_reinforce_with_actor_critic_norm_tanh_action/returns_test_model_reinforce_with_actor_critic_norm_tanh_action.npy", np.array(test_returns))
-	np.save("test_analysis/model_reinforce_with_actor_critic_norm_tanh_action/times_test_model_reinforce_with_actor_critic_norm_tanh_action.npy", np.array(test_times))
-	
 
 if __name__ == '__main__':
-	main()
+    main()
