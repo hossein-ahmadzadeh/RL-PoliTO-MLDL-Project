@@ -93,7 +93,7 @@ class Agent(object):
         self.action_log_probs = []
         self.rewards = []
         self.done = []
-        self.beta = 5e-3  # Entropy regularization coefficient
+        self.beta = 2e-3  # Entropy regularization coefficient
 
         self.mu_log = []         # Stores [μ1, μ2, μ3] per episode
         self.sigma_log = []      # Stores [σ1, σ2, σ3] per episode
