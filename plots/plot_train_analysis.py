@@ -17,6 +17,16 @@ def moving_average(data, window_size):
     return np.convolve(data, np.ones(window_size)/window_size, mode='valid')
 
 
+def save_plot(x, y, title, ylabel, filename, color='blue'):
+    plt.figure(figsize=(12, 5))
+    plt.plot(x, y, color=color)
+    plt.xlabel("Episode")
+    plt.ylabel(ylabel)
+    plt.title(title)
+    plt.grid(True)
+    plt.tight_layout()
+    plt.savefig(f"{output_dir}/{filename}.png", dpi=300)
+    plt.close()
 
 def plot_and_save(y, title, ylabel, filename, xlabel="Episode", x=None, label=None):
     plt.figure(figsize=(12, 6))
@@ -37,51 +47,56 @@ def plot_and_save(y, title, ylabel, filename, xlabel="Episode", x=None, label=No
 returns = np.load(f"{analysis_dir}/returns_per_episode.npy")
 losses = np.load(f"{analysis_dir}/losses_per_episode.npy")
 times = np.load(f"{analysis_dir}/episode_times.npy")
-variances = np.load(f"{analysis_dir}/variances_episode_return_window.npy")
+variances = np.load(f"{analysis_dir}/variances_episode_returns_window.npy")
 agent_returns_variances_per_episode = np.load(f"{analysis_dir}/agent_returns_variances.npy")
+
 
 mu_log = np.load(f"{log_dir}/mu_log.npy", allow_pickle=True)
 sigma_log = np.load(f"{log_dir}/sigma_log.npy", allow_pickle=True)
 entropy_log = np.load(f"{log_dir}/entropy_log.npy")
+
 returns_mean = np.load(f"{log_dir}/agent_returns_mean_log_per_episode.npy")
 returns_std = np.load(f"{log_dir}/agent_returns_std_log_per_episode.npy")
-advantages_mean = np.load(f"{log_dir}/agent_advantages_mean_log_per_episode.npy")
-advantages_std = np.load(f"{log_dir}/agent_advantages_std_log_per_episode.npy")
+
+
+episodes = np.arange(1, len(returns) + 1)
 
 
 plot_and_save(returns, "Returns per Episode", "Return", "returns_raw")
-plot_and_save(moving_average(returns, window_size), "Smoothed Returns (avg over 100 episodes)", "Average Return", "returns_avg", x=np.arange(len(returns) - window_size + 1))
+plot_and_save(moving_average(returns, window_size), "Smoothed Returns (avg over 100 episodes)", "Average Return", "returns_avg-100 ـ", x=np.arange(len(returns) - window_size + 1))
 plot_and_save(np.cumsum(returns), "Cumulative Returns", "Cumulative Return", "returns_cumulative")
+save_plot(episodes, np.cumsum(returns) / episodes, "Cumulative Average", "Cumulative Average", "returns_avgـCumulative")
+
 
 plot_and_save(losses, "Loss per Episode", "Loss", "losses_raw")
 plot_and_save(moving_average(losses, window_size), "Smoothed Loss (avg over 100 episodes)", "Average Loss", "losses_avg", x=np.arange(len(losses) - window_size + 1))
 plot_and_save(np.cumsum(losses), "Cumulative Loss", "Cumulative Loss", "losses_cumulative")
 
+
 plot_and_save(times, "Episode Time per Episode", "Time (s)", "times_raw")
 plot_and_save(moving_average(times, window_size), "Smoothed Time (avg over 100 episodes)", "Average Time (s)", "times_avg", x=np.arange(len(times) - window_size + 1))
 plot_and_save(np.cumsum(times), "Cumulative Time", "Total Time (s)", "times_cumulative")
+total_time_seconds = np.cumsum(times)[-1]
+total_time_minutes = total_time_seconds / 60
+
+print(f"Total training time: {total_time_minutes:.2f} minutes")
 
 # --------- Variance ---------
-episodes = np.arange(0, len(variances) * 1000, 1000)
+
 plot_and_save(variances, "Variance of Returns Over Episodes", "Variance", "variances_raw", x=episodes)
-plot_and_save(moving_average(variances, window_size), "Smoothed Variance (avg over 100 episodes)", "Average Variance", "variances_avg", x=episodes[:-window_size + 1])
+plot_and_save(moving_average(variances, window_size), "Smoothed Variance (avg over 100 episodes)", "Average Variance", "variances_avg",x=np.arange(len(agent_returns_variances_per_episode) - window_size + 1))
 plot_and_save(np.cumsum(variances), "Cumulative Variance", "Cumulative Variance", "variances_cumulative", x=episodes)
 
-# --------- Moving Window Variance (از train) ---------
-plot_and_save(variances, f'Variance of Total Episode Returns (Window {window_size})', 'Variance', 'returns_variance_window')
-
-# --------- Rewards ---------
-plot_and_save(returns, "Episode Rewards Over Time", "Total Reward", "episode_rewards")
 
 # --------- Entropy ---------
 plot_and_save(entropy_log, "Entropy over Steps", "Entropy", "entropy")
 
 # --------- Agent Variance Logs ---------
 plot_and_save(agent_returns_variances_per_episode, "Variance of Discounted Returns (Agent)", "Variance", "agent_returns_variance")
-plot_and_save(advantages_mean, "Mean Advantage (Agent)", "Mean Advantage", "agent_advantage_mean")
-plot_and_save(advantages_std, "Std Advantage (Agent)", "Std Advantage", "agent_advantage_std")
-
-
+plot_and_save(returns_mean, "Mean returns (Agent)", "Mean returns", "agent_returns_mean")
+plot_and_save(returns_std, "Std returns (Agent)", "Std returns", "agent_returns_std")
+episodes = np.arange(1, len(agent_returns_variances_per_episode) + 1)
+print(len(agent_returns_variances_per_episode))
 mu_log = np.array(mu_log)
 sigma_log = np.array(sigma_log)
 

@@ -3,7 +3,6 @@ import torch
 import torch.nn.functional as F
 from torch.distributions import Normal
 
-
 def discount_rewards(r, gamma):
     discounted_r = torch.zeros_like(r)
     running_add = 0
@@ -11,7 +10,6 @@ def discount_rewards(r, gamma):
         running_add = running_add * gamma + r[t]
         discounted_r[t] = running_add
     return discounted_r
-
 
 class Policy(torch.nn.Module):
     def __init__(self, state_space, action_space):
@@ -33,22 +31,13 @@ class Policy(torch.nn.Module):
         init_sigma = 0.5
         self.sigma = torch.nn.Parameter(torch.zeros(self.action_space)+init_sigma)
 
-
-        """
-            Critic network
-        """
-        # TASK 3: critic network for actor-critic algorithm
-
-
         self.init_weights()
-
 
     def init_weights(self):
         for m in self.modules():
             if type(m) is torch.nn.Linear:
                 torch.nn.init.normal_(m.weight)
                 torch.nn.init.zeros_(m.bias)
-
 
     def forward(self, x):
         """
@@ -60,12 +49,6 @@ class Policy(torch.nn.Module):
 
         sigma = self.sigma_activation(self.sigma)
         normal_dist = Normal(action_mean, sigma)
-
-
-        """
-            Critic
-        """
-        # TASK 3: forward in the critic network
 
         
         return normal_dist
@@ -83,20 +66,18 @@ class Agent(object):
         self.action_log_probs = []
         self.rewards = []
         self.done = []
-        self.b = 20 
+        self.b = 20
 
         self.mu_log = []     # Stores [μ1, μ2, μ3] per episode
         self.sigma_log = []  # Stores [σ1, σ2, σ3] per episode
-        self.actions_log = [] # Stores [a1, a2, a3] per step
         self.entropy_log = [] # Stores entropy of the action distribution per step
-        self.returns_variance_log = [] # Stores variance of discounted returns (for PG)
-        self.advantages_variance_log = [] # Stores variance of advantage terms
-        self.returns_mean_log = []   # Log mean of returns
-        self.returns_std_log = []    # Log std of returns
-        self.advantages_mean_log = [] # Log mean of advantages
-        self.advantages_std_log = []  # Log std of advantages
-
-
+        self.actions_log = []
+        
+        self.returns_log = []  # برای ذخیره همه‌ی advantageها
+        self.returns_mean_log = [] # Log mean of advantages
+        self.returns_std_log = []  # Log std of advantages
+        self.returns_variance_log = [] # Stores variance of advantage terms
+        
 
     def update_policy(self):
         action_log_probs = torch.stack(self.action_log_probs, dim=0).to(self.train_device).squeeze(-1)
@@ -107,58 +88,47 @@ class Agent(object):
 
         self.states, self.next_states, self.action_log_probs, self.rewards, self.done = [], [], [], [], []
 
-        #
         # TASK 2:
         #   - compute discounted returns
           # 1. Compute discounted returns (G_t)
         returns = discount_rewards(rewards, gamma=self.gamma)
-        
-        # Log mean and std of raw discounted returns for analysis
-        self.returns_mean_log.append(returns.mean().item())
-        self.returns_std_log.append(returns.std().item())
-
+    
         # 2. Compute Advantages (A_t = G_t - b) using the constant baseline
         # You correctly had `returns = returns - self.b` here, which computes the advantage.
         # Let's explicitly call it advantages to be clear.
-        advantages = returns 
+        returns = returns - self.b
+        self.returns_log.append(returns.detach().cpu().numpy().tolist())  # ذخیره‌ی همه مقادیر
 
         # Log mean and std of unnormalized advantages
-        self.advantages_mean_log.append(advantages.mean().item())
-        self.advantages_std_log.append(advantages.std().item())
+        self.returns_mean_log.append(returns.mean().item())
+        self.returns_std_log.append(returns.std().item())
 
         # Calculate and log variance of unnormalized advantages (after baseline)
-        if len(advantages) > 1: # Ensure there's enough data to calculate variance
-            advantages_variance = torch.var(advantages).item()
-            self.advantages_variance_log.append(advantages_variance)
-        else:
-            self.advantages_variance_log.append(0.0) # Append 0 if variance cannot be computed
+        if len(returns) > 1: # Ensure there's enough data to calculate variance
+            returns_variance = torch.var(returns).item()
             
-
+        else:
+            returns_variance=0.0 # Append 0 if variance cannot be computed
+            
        # 3. Normalize Advantages (A_t_normalized = (A_t - mean(A)) / std(A))
         # This is the "whitening" step for advantages.
-        if advantages.std() > 1e-6:  # Avoid division by near-zero std
-            advantages = (advantages - advantages.mean()) / (advantages.std() + 1e-8)
+        if returns.std() > 1e-6:  # Avoid division by near-zero std
+            returns = (returns - returns.mean()) / (returns.std() + 1e-8)
         else:
-            # If std is too small, just subtract the mean (centering)
-            advantages = advantages - advantages.mean()
+             #If std is too small, just subtract the mean (centering)
+            returns = returns - returns.mean()
        
         #   - compute policy gradient loss function given actions and returns
-        loss = -(action_log_probs * advantages).mean()
+        loss = -(action_log_probs * returns).mean()
 
         #   - compute gradients and step the optimizer
         self.optimizer.zero_grad()
         loss.backward()
         self.optimizer.step()
 
-        #
-        # TASK 3:
-        #   - compute boostrapped discounted return estimates
-        #   - compute advantage terms
-        #   - compute actor loss and critic loss
-        #   - compute gradients and step the optimizer
-        #
+      
 
-        return loss.item() # Return the loss for monitoring   
+        return loss.item(), returns_variance# Return the loss for monitoring   
 
 
     def get_action(self, state, evaluation=False):
