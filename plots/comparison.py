@@ -3,14 +3,14 @@ import matplotlib.pyplot as plt
 import os
 
 # ------------------------- تنظیمات مسیرها -------------------------
-baseline_model = "REINFORCE-b"     # ← با baseline
-no_baseline_model = "REINFORCE"    # ← بدون baseline
+baseline_model = "AC-N-G"     # ← با baseline
+no_baseline_model = "AC-G"    # ← بدون baseline
 
-baseline_path = f"analysis/{baseline_model}/returns_per_episode.npy"
-no_baseline_path = f"analysis/{no_baseline_model}/returns_per_episode.npy"
+baseline_path = f"analysis/{baseline_model}/advantage_per_episode.npy"
+no_baseline_path = f"analysis/{no_baseline_model}/advantage_per_episode.npy"
 
 # محل ذخیره نمودار خروجی
-output_path = "report/comparison_returns.png"
+output_path = "report/comparison_Advantage_G.png"
 os.makedirs(os.path.dirname(output_path), exist_ok=True)
 
 # ------------------------- تنظیمات متحرک‌سازی -------------------------
@@ -37,12 +37,12 @@ no_baseline_avg = no_baseline_avg[:min_len]
 
 # ------------------------- رسم نمودار مقایسه‌ای -------------------------
 plt.figure(figsize=(12, 6))
-plt.plot(episodes, no_baseline_avg, label="REINFORCE (No Baseline)", linewidth=2, color="red")
-plt.plot(episodes, baseline_avg, label="REINFORCE (With Baseline)", linewidth=2, color="blue")
+plt.plot(episodes, no_baseline_avg, label="Actor-Critic (No Normalize)", linewidth=2, color="red")
+plt.plot(episodes, baseline_avg, label="Actor-critic (With Normalize)", linewidth=2, color="blue")
 
 plt.title("Smoothed Returns Comparison (avg over 100 episodes)")
 plt.xlabel("Episode")
-plt.ylabel("Average Return")
+plt.ylabel("Average Advantage")
 plt.legend()
 plt.grid(True)
 plt.tight_layout()

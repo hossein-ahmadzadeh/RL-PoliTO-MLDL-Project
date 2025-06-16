@@ -6,7 +6,7 @@ import matplotlib as mpl
 mpl.rcParams['agg.path.chunksize'] = 10000
 
 # -------- path-------
-model_name = "REINFORCE-b"  
+model_name = "AC-N-G"  
 log_dir = f"logs/{model_name}"
 output_dir = f"report/{model_name}/images/log"
 os.makedirs(output_dir, exist_ok=True)

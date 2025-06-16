@@ -2,7 +2,7 @@ import os
 import numpy as np
 import matplotlib.pyplot as plt
 
-model_name = "REINFORCE"
+model_name = "AC-n"
 log_dir = f"logs/{model_name}"
 analysis_dir = f"analysis/{model_name}"
 output_dir = f"report/{model_name}/images/train"
@@ -44,19 +44,19 @@ def plot_and_save(y, title, ylabel, filename, xlabel="Episode", x=None, label=No
     plt.close()
 
 # --------- Load Data ---------
-returns = np.load(f"{analysis_dir}/returns_per_episode.npy")
+returns = np.load(f"{analysis_dir}/advantage_per_episode.npy")
 losses = np.load(f"{analysis_dir}/losses_per_episode.npy")
 times = np.load(f"{analysis_dir}/episode_times.npy")
-variances = np.load(f"{analysis_dir}/variances_episode_returns_window.npy")
-agent_returns_variances_per_episode = np.load(f"{analysis_dir}/agent_returns_variances.npy")
+variances = np.load(f"{analysis_dir}/variances_episode_advantage_window.npy")
+agent_returns_variances_per_episode = np.load(f"{analysis_dir}/agent_advantage_variances.npy")
 
 
 mu_log = np.load(f"{log_dir}/mu_log.npy", allow_pickle=True)
 sigma_log = np.load(f"{log_dir}/sigma_log.npy", allow_pickle=True)
 entropy_log = np.load(f"{log_dir}/entropy_log.npy")
 
-returns_mean = np.load(f"{log_dir}/agent_returns_mean_log_per_episode.npy")
-returns_std = np.load(f"{log_dir}/agent_returns_std_log_per_episode.npy")
+returns_mean = np.load(f"{log_dir}/advantages_mean_log.npy")
+returns_std = np.load(f"{log_dir}/advantages_std_log.npy")
 
 
 episodes = np.arange(1, len(returns) + 1)
