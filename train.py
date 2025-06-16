@@ -10,10 +10,10 @@ from agent import Agent, Policy
 
 def parse_args():
     parser = argparse.ArgumentParser()
-    parser.add_argument('--n-episodes', default=100000, type=int)
+    parser.add_argument('--n-episodes', default=50000, type=int)
     parser.add_argument('--print-every', default=5000, type=int)
     parser.add_argument('--device', default='cpu', type=str)
-    parser.add_argument('--model-name', default='model_actor_critic_norm_tanh_entropy', type=str)
+    parser.add_argument('--model-name', default='model_reinforce_simple_norm_tanh', type=str)
     return parser.parse_args()
 
 args = parse_args()
@@ -41,9 +41,20 @@ def main():
 	policy = Policy(observation_space_dim, action_space_dim)
 	agent = Agent(policy, device=args.device)
 
-	all_rewards, episode_times, losses = [], [], []
-	smoothed_returns, returns_var_per_window, returns_window = [], [], []
-	window_size = 100
+	# ----------------------------------------------------------------------------------------------- #
+	# Logs per episode
+	training_rewards_per_episode = []       # Total reward collected in each episode
+	times_per_episode = []                  # Duration of each episode
+	losses_per_episode = []                 # Policy loss recorded per episode
+
+	# Rolling window metrics for smoothing and stability analysis
+	smoothed_training_rewards = []          # Moving average of recent episode rewards
+	training_reward_variance_window = []    # Variance of rewards over recent episodes (training stability)
+	recent_training_rewards_window = []     # Buffer holding the most recent N episode rewards
+
+	window_size = 100  # Number of episodes to include in the rolling window
+	# ----------------------------------------------------------------------------------------------- #
+
 
 	for episode in range(args.n_episodes):
 		start_time = time.time()
@@ -59,26 +70,37 @@ def main():
 			train_reward += reward
 
 		loss = agent.update_policy()
-		losses.append(loss)
+		losses_per_episode.append(loss)
 
 		end_time = time.time()
-		all_rewards.append(train_reward)
-		episode_times.append(end_time - start_time)
+		training_rewards_per_episode.append(train_reward)
+		times_per_episode.append(end_time - start_time)
+
+
+		# -------------------------------------------------------- #
+		# Update recent reward buffer
+		recent_training_rewards_window.append(train_reward)
+		if len(recent_training_rewards_window) > window_size:
+			recent_training_rewards_window.pop(0)
+		# -------------------------------------------------------- #
+
+
+		# -------------------------------------------------------------- #
+		# Compute smoothed reward and variance only when window is full
+		if len(recent_training_rewards_window) == window_size:
+			mean_reward = np.mean(recent_training_rewards_window)
+			var_reward = np.var(recent_training_rewards_window)
+
+			smoothed_training_rewards.append(mean_reward)
+			training_reward_variance_window.append(var_reward)
+		# -------------------------------------------------------------- #
 
 		if (episode + 1) % args.print_every == 0:
-			avg_return = np.mean(returns_window) if returns_window else 0
-			var_return = np.var(returns_window) if returns_window else 0
 			print(f"--- Episode {episode+1}/{args.n_episodes} ---")
-			print(f"  Reward: {train_reward:.2f} | Smoothed: {avg_return:.2f} | Variance: {var_return:.2f}")
-			print(f"  Loss: {loss:.4f} | Time: {end_time - start_time:.2f}s")
+			print(f"  Reward: {train_reward:.2f} | Smoothed: {mean_reward:.2f} | Variance: {var_reward:.2f}")
+			print(f"  Loss: {loss:.2f} | Time: {end_time - start_time:.2f}s")
 			print("-" * 40)
 
-		returns_window.append(train_reward)
-		if len(returns_window) > window_size:
-			returns_window.pop(0)
-
-		smoothed_returns.append(np.mean(returns_window))
-		returns_var_per_window.append(np.var(returns_window))
 
 	# === Save logs ===
 	np.save(f"{log_dir}/mu_log.npy", np.array(agent.mu_log))
@@ -86,21 +108,28 @@ def main():
 	np.save(f"{log_dir}/actions_log.npy", np.array(agent.actions_log))
 	np.save(f"{log_dir}/entropy_log.npy", np.array(agent.entropy_log))
 
-	np.save(f"{log_dir}/advantages_mean_log.npy", np.array(agent.advantages_mean_log))
-	np.save(f"{log_dir}/advantages_std_log.npy", np.array(agent.advantages_std_log))
-	np.save(f"{log_dir}/td_target_mean_log.npy", np.array(agent.td_target_mean_log))
-	np.save(f"{log_dir}/td_target_std_log.npy", np.array(agent.td_target_std_log))
+	# np.save(f"{log_dir}/advantages_mean_log.npy", np.array(agent.advantages_mean_log))
+	# np.save(f"{log_dir}/advantages_std_log.npy", np.array(agent.advantages_std_log))
+	# np.save(f"{log_dir}/td_target_mean_log.npy", np.array(agent.td_target_mean_log))
+	# np.save(f"{log_dir}/td_target_std_log.npy", np.array(agent.td_target_std_log))
 
-	np.save(f"{log_dir}/advantages_log.npy", np.array(agent.advantages_log, dtype=object))
-	np.save(f"{log_dir}/td_target_log.npy", np.array(agent.td_target_log, dtype=object))
+	# ----------------------------------------------------------------------------------------------- #
+	np.save(f"{log_dir}/discounted_returns_mean_log.npy", np.array(agent.discounted_returns_mean_log))
+	np.save(f"{log_dir}/discounted_returns_std_log.npy", np.array(agent.discounted_returns_std_log))
+	np.save(f"{log_dir}/discounted_returns_variance_log.npy", np.array(agent.discounted_returns_variance_log))
+	# ----------------------------------------------------------------------------------------------- #
 
-	np.save(f"{analysis_dir}/episode_times.npy", np.array(episode_times))
-	np.save(f"{analysis_dir}/episode_rewards.npy", np.array(all_rewards))
-	np.save(f"{analysis_dir}/losses.npy", np.array(losses))
-	np.save(f"{analysis_dir}/episode_rewards_smoothed_100.npy", np.array(smoothed_returns))
-	np.save(f"{analysis_dir}/episode_rewards_variance_100.npy", np.array(returns_var_per_window))
-	np.save(f"{analysis_dir}/advantages_variance_log.npy", np.array(agent.advantages_variance_log))
-	np.save(f"{analysis_dir}/td_target_variance_log.npy", np.array(agent.td_target_variance_log))
+	# np.save(f"{log_dir}/advantages_log.npy", np.array(agent.advantages_log, dtype=object))
+	# np.save(f"{log_dir}/td_target_log.npy", np.array(agent.td_target_log, dtype=object))
+
+	np.save(f"{analysis_dir}/episode_times.npy", np.array(times_per_episode))
+	np.save(f"{analysis_dir}/episode_rewards.npy", np.array(training_rewards_per_episode))
+	np.save(f"{analysis_dir}/losses.npy", np.array(losses_per_episode))
+	np.save(f"{analysis_dir}/episode_rewards_smoothed_100.npy", np.array(smoothed_training_rewards))
+	np.save(f"{analysis_dir}/episode_rewards_variance_100.npy", np.array(training_reward_variance_window))
+
+	# np.save(f"{analysis_dir}/advantages_variance_log.npy", np.array(agent.advantages_variance_log))
+	# np.save(f"{analysis_dir}/td_target_variance_log.npy", np.array(agent.td_target_variance_log))
 
 	# === Save model ===
 	torch.save(agent.policy.state_dict(), model_path)
