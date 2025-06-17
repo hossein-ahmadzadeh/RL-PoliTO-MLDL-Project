@@ -10,10 +10,10 @@ from agent import Agent, Policy
 
 def parse_args():
     parser = argparse.ArgumentParser()
-    parser.add_argument('--n-episodes', default=50000, type=int)
+    parser.add_argument('--n-episodes', default=10000, type=int)
     parser.add_argument('--print-every', default=5000, type=int)
     parser.add_argument('--device', default='cpu', type=str)
-    parser.add_argument('--model-name', default='model_reinforce_simple_norm_tanh', type=str)
+    parser.add_argument('--model-name', default='model_reinforce_with_baseline_simple', type=str)
     return parser.parse_args()
 
 args = parse_args()
@@ -117,6 +117,10 @@ def main():
 	np.save(f"{log_dir}/discounted_returns_mean_log.npy", np.array(agent.discounted_returns_mean_log))
 	np.save(f"{log_dir}/discounted_returns_std_log.npy", np.array(agent.discounted_returns_std_log))
 	np.save(f"{log_dir}/discounted_returns_variance_log.npy", np.array(agent.discounted_returns_variance_log))
+
+	np.save(f"{log_dir}/advantages_mean_log.npy", np.array(agent.advantages_mean_log))
+	np.save(f"{log_dir}/advantages_std_log.npy", np.array(agent.advantages_std_log))
+	np.save(f"{log_dir}/advantages_variance_log.npy", np.array(agent.advantages_variance_log))
 	# ----------------------------------------------------------------------------------------------- #
 
 	# np.save(f"{log_dir}/advantages_log.npy", np.array(agent.advantages_log, dtype=object))

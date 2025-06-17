@@ -6,7 +6,7 @@ import matplotlib as mpl
 mpl.rcParams['agg.path.chunksize'] = 10000
 
 # === Model & Directory Settings ===
-model_name = "model_reinforce_simple_norm"  # <-- Updated to your working model
+model_name = "model_reinforce_with_baseline"  # <------------------- Updated to your working model
 base_log_dir = "logs"
 base_report_dir = "report"
 
@@ -22,6 +22,9 @@ entropy_log = np.load(f"{log_dir}/entropy_log.npy")
 discounted_returns_mean_log = np.load(f"{log_dir}/discounted_returns_mean_log.npy")
 discounted_returns_std_log = np.load(f"{log_dir}/discounted_returns_std_log.npy")
 discounted_returns_variance_log = np.load(f"{log_dir}/discounted_returns_variance_log.npy")
+advantages_mean_log = np.load(f"{log_dir}/advantages_mean_log.npy")
+advantages_std_log = np.load(f"{log_dir}/advantages_std_log.npy")
+advantages_variance_log = np.load(f"{log_dir}/advantages_variance_log.npy")
 
 # === Plot helpers ===
 def plot_3d_lines(data, title, ylabel, filename):
@@ -109,4 +112,35 @@ plt.title("Variance of Discounted Return")
 plt.grid(True)
 plt.tight_layout()
 plt.savefig(os.path.join(output_dir, "discounted_returns_variance_log.png"), dpi=300)
+plt.close()
+
+# Advantages stats
+plt.figure(figsize=(12, 5))
+plt.plot(advantages_mean_log, label="Advantage Mean", color='crimson')
+plt.xlabel("Episode")
+plt.ylabel("Mean")
+plt.title("Mean of Advantage per Episode")
+plt.grid(True)
+plt.tight_layout()
+plt.savefig(os.path.join(output_dir, "advantages_mean_log.png"), dpi=300)
+plt.close()
+
+plt.figure(figsize=(12, 5))
+plt.plot(advantages_std_log, label="Advantage Std Dev", color='blue')
+plt.xlabel("Episode")
+plt.ylabel("Std Dev")
+plt.title("Std Dev of Advantage per Episode")
+plt.grid(True)
+plt.tight_layout()
+plt.savefig(os.path.join(output_dir, "advantages_std_log.png"), dpi=300)
+plt.close()
+
+plt.figure(figsize=(12, 5))
+plt.plot(advantages_variance_log, label="Advantage Variance", color='darkgreen')
+plt.xlabel("Episode")
+plt.ylabel("Variance")
+plt.title("Variance of Advantage per Episode")
+plt.grid(True)
+plt.tight_layout()
+plt.savefig(os.path.join(output_dir, "advantages_variance_log.png"), dpi=300)
 plt.close()
