@@ -92,6 +92,7 @@ class Agent(object):
         self.action_log_probs = []
         self.rewards = []
         self.done = []
+        self.b = 20
         # self.beta = 2e-3  # Entropy regularization coefficient
 
         self.mu_log = []         # Stores [μ1, μ2, μ3] per episode
@@ -104,6 +105,12 @@ class Agent(object):
         self.discounted_returns_mean_log = []  # Log mean of discounted returns
         self.discounted_returns_std_log = []   # Log std of discounted returns
         self.discounted_returns_variance_log = []  # Log variance of discounted returns
+        # ---------------------------------------------------- #
+
+        # ---------------------------------------------------- #
+        self.advantages_mean_log = []  # Log mean of advantages
+        self.advantages_std_log = []   # Log std of advantages
+        self.advantages_variance_log = []  # Log variance of advantages
         # ---------------------------------------------------- #
 
 
@@ -142,6 +149,12 @@ class Agent(object):
         # ---------------------------------------------------- #
         returns = discount_rewards(rewards, gamma=self.gamma)
         # ---------------------------------------------------- #
+
+        # ---------------------------------------------------- #
+        advantages = returns - self.b
+        # ---------------------------------------------------- #
+
+        
         
 
         # # === Compute Advantage: A(s) = G - V(s) ===
@@ -149,24 +162,33 @@ class Agent(object):
         # advantages_mean = advantages.mean().item()
         # advantages_std = advantages.std().item()
 
-
         # ------------------------------------ #
         discounted_returns_mean = returns.mean().item()
         discounted_returns_std = returns.std().item()
+        # ------------------------------------ #
+
+        # ------------------------------------ #
+        advantages_mean = advantages.mean().item()
+        advantages_std = advantages.std().item()
         # ------------------------------------ #
 
         # ---------------------------------------------------- #
         self.discounted_returns_mean_log.append(discounted_returns_mean)
         self.discounted_returns_std_log.append(discounted_returns_std)
         self.discounted_returns_variance_log.append(np.var(returns.detach().cpu().numpy()))
+
+        self.advantages_mean_log.append(advantages_mean)
+        self.advantages_std_log.append(advantages_std)
+        self.advantages_variance_log.append(np.var(advantages.detach().cpu().numpy()))
         # ---------------------------------------------------- #
 
 
-        if discounted_returns_std > 1e-6:  # Avoid division by near-zero std
-            returns = (returns - discounted_returns_mean) / (discounted_returns_std + 1e-8)
-        else:
-            returns = returns - discounted_returns_mean  # Only subtract mean if std is too small
-
+        # -------------------NORMALIZATION-------------------- #
+        # if advantages_std > 1e-6:  # Avoid division by near-zero std
+        #     advantages = (advantages - advantages_mean) / (advantages_std + 1e-8)
+        # else:
+        #     advantages = advantages - advantages_mean  # Only subtract mean if std is too small
+        # ---------------------------------------------------- #
 
         # # === Logging for analysis ===
         # self.td_target_log.append(td_target.detach().cpu().numpy())
@@ -193,7 +215,7 @@ class Agent(object):
         # === Total loss: actor + 0.5 * critic ===
         # loss = actor_loss + (0.5 * critic_loss) - (self.beta * entropy) # Add entropy term for exploration
 
-        loss = -(action_log_probs * returns).mean()
+        loss = -(action_log_probs * advantages).mean()
 
         #   - compute gradients and step the optimizer
         self.optimizer.zero_grad()
@@ -221,15 +243,20 @@ class Agent(object):
             return normal_dist.mean, None
 
         else:   # Sample from the distribution
-            u = normal_dist.sample()
-            action = torch.tanh(u)  # squash into [-1, 1]
 
-            log_prob = normal_dist.log_prob(u) - torch.log(1 - action.pow(2) + 1e-6)
-            action_log_prob = log_prob.sum()
+            # --------------Squash the action into [-1, 1] using tanh-------------- #
+            # u = normal_dist.sample()
+            # action = torch.tanh(u)  # squash into [-1, 1]
 
-            # Not Squashing the action
-            # action = normal_dist.sample()
-            # action_log_prob = normal_dist.log_prob(action).sum()
+            # log_prob = normal_dist.log_prob(u) - torch.log(1 - action.pow(2) + 1e-6)
+            # action_log_prob = log_prob.sum()
+            # --------------------------------------------------------------------- #
+            
+            # -----------------------NO SQUASH---------------------- #
+            Not Squashing the action
+            action = normal_dist.sample()
+            action_log_prob = normal_dist.log_prob(action).sum()
+            # ------------------------------------------------------ #
 
 
             # Entropy of the policy
