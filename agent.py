@@ -253,7 +253,7 @@ class Agent(object):
             # --------------------------------------------------------------------- #
             
             # -----------------------NO SQUASH---------------------- #
-            Not Squashing the action
+            # Not Squashing the action
             action = normal_dist.sample()
             action_log_prob = normal_dist.log_prob(action).sum()
             # ------------------------------------------------------ #
