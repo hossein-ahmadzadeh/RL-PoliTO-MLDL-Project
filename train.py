@@ -13,7 +13,7 @@ def parse_args():
     parser.add_argument('--n-episodes', default=10000, type=int)
     parser.add_argument('--print-every', default=5000, type=int)
     parser.add_argument('--device', default='cpu', type=str)
-    parser.add_argument('--model-name', default='model_reinforce_with_baseline_simple', type=str)
+    parser.add_argument('--model-name', default='model_reinforce_with_baseline_simple_norm_tanh', type=str)
     return parser.parse_args()
 
 args = parse_args()
