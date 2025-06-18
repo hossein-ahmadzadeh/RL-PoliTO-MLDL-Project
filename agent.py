@@ -184,10 +184,10 @@ class Agent(object):
 
 
         # -------------------NORMALIZATION-------------------- #
-        # if advantages_std > 1e-6:  # Avoid division by near-zero std
-        #     advantages = (advantages - advantages_mean) / (advantages_std + 1e-8)
-        # else:
-        #     advantages = advantages - advantages_mean  # Only subtract mean if std is too small
+        if advantages_std > 1e-6:  # Avoid division by near-zero std
+            advantages = (advantages - advantages_mean) / (advantages_std + 1e-8)
+        else:
+            advantages = advantages - advantages_mean  # Only subtract mean if std is too small
         # ---------------------------------------------------- #
 
         # # === Logging for analysis ===
@@ -245,17 +245,17 @@ class Agent(object):
         else:   # Sample from the distribution
 
             # --------------Squash the action into [-1, 1] using tanh-------------- #
-            # u = normal_dist.sample()
-            # action = torch.tanh(u)  # squash into [-1, 1]
+            u = normal_dist.sample()
+            action = torch.tanh(u)  # squash into [-1, 1]
 
-            # log_prob = normal_dist.log_prob(u) - torch.log(1 - action.pow(2) + 1e-6)
-            # action_log_prob = log_prob.sum()
+            log_prob = normal_dist.log_prob(u) - torch.log(1 - action.pow(2) + 1e-6)
+            action_log_prob = log_prob.sum()
             # --------------------------------------------------------------------- #
             
             # -----------------------NO SQUASH---------------------- #
             # Not Squashing the action
-            action = normal_dist.sample()
-            action_log_prob = normal_dist.log_prob(action).sum()
+            # action = normal_dist.sample()
+            # action_log_prob = normal_dist.log_prob(action).sum()
             # ------------------------------------------------------ #
 
 

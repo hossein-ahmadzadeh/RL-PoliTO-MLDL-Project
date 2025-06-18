@@ -4,16 +4,16 @@ import os
 
 # === Model names to compare ===
 model_names = [
-    "model_reinforce_with_baseline",
-    "model_reinforce_with_baseline_norm",
-    "model_reinforce_with_baseline_tanh",
-    "model_reinforce_with_baseline_norm_tanh"
+    "model_reinforce_simple",
+    "model_reinforce_simple_norm",
+    "model_reinforce_simple_tanh",
+    "model_reinforce_simple_norm_tanh"
 ]
 
 # === Directories ===
 log_base = "logs"
 analysis_base = "analysis"
-output_dir = "report/comparison/images"
+output_dir = "report/comparison1/images"    ## Change this to your desired output directory
 os.makedirs(output_dir, exist_ok=True)
 
 # === Plot helper ===
