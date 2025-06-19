@@ -6,7 +6,7 @@ import matplotlib as mpl
 mpl.rcParams['agg.path.chunksize'] = 10000
 
 # === Model & Directory Settings ===
-model_name = "model_reinforce_with_baseline_simple_norm_tanh"  # <------------------- Updated to your working model
+model_name = "model_actor_critic_simple_norm_tanh"  # <------------------- Updated to your working model
 base_log_dir = "logs"
 base_report_dir = "report"
 
