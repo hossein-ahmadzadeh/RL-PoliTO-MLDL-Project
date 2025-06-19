@@ -40,11 +40,9 @@ class Policy(torch.nn.Module):
         # TASK 3: critic network for actor-critic algorithm
 
 
-        # self.fc1_critic = torch.nn.Linear(state_space, self.hidden)
-        # self.fc2_critic = torch.nn.Linear(self.hidden, self.hidden)
-        # self.fc3_critic_value = torch.nn.Linear(self.hidden, 1)
-
-
+        self.fc1_critic = torch.nn.Linear(state_space, self.hidden)
+        self.fc2_critic = torch.nn.Linear(self.hidden, self.hidden)
+        self.fc3_critic_value = torch.nn.Linear(self.hidden, 1)
 
         self.init_weights()
 
@@ -73,11 +71,11 @@ class Policy(torch.nn.Module):
         """
         # TASK 3: forward in the critic network
 
-        # x_critic = self.tanh(self.fc1_critic(x))
-        # x_critic = self.tanh(self.fc2_critic(x_critic))
-        # state_value = self.fc3_critic_value(x_critic).squeeze(-1)
+        x_critic = self.tanh(self.fc1_critic(x))
+        x_critic = self.tanh(self.fc2_critic(x_critic))
+        state_value = self.fc3_critic_value(x_critic).squeeze(-1)
         
-        return normal_dist
+        return normal_dist, state_value
 
 
 class Agent(object):
@@ -92,7 +90,7 @@ class Agent(object):
         self.action_log_probs = []
         self.rewards = []
         self.done = []
-        self.b = 20
+        # self.b = 20
         # self.beta = 2e-3  # Entropy regularization coefficient
 
         self.mu_log = []         # Stores [μ1, μ2, μ3] per episode
@@ -102,9 +100,9 @@ class Agent(object):
 
 
         # ---------------------------------------------------- #
-        self.discounted_returns_mean_log = []  # Log mean of discounted returns
-        self.discounted_returns_std_log = []   # Log std of discounted returns
-        self.discounted_returns_variance_log = []  # Log variance of discounted returns
+        self.discounted_returns_mean_log = []  # Log mean of discounted returns (TD targets)
+        self.discounted_returns_std_log = []   # Log std of discounted returns (TD targets)
+        self.discounted_returns_variance_log = []  # Log variance of discounted returns (TD targets)
         # ---------------------------------------------------- #
 
         # ---------------------------------------------------- #
@@ -134,24 +132,30 @@ class Agent(object):
 
         self.states, self.next_states, self.action_log_probs, self.rewards, self.done = [], [], [], [], []
 
-        # # === Get state-values from critic ===
-        # with torch.no_grad():
-        #     _, next_state_values = self.policy(next_states)
+        # === Get state-values from critic ===
+        with torch.no_grad():
+            _, next_state_values = self.policy(next_states)
             
-        # dist, state_values = self.policy(states)
+        dist, state_values = self.policy(states)
 
 
         # entropy = dist.entropy().sum(dim=-1).mean()
         
+        # ---------------------------------------------------- #
         # # Compute TD targets
-        # td_target = rewards + self.gamma * next_state_values * (1 - done)
-
-        # ---------------------------------------------------- #
-        returns = discount_rewards(rewards, gamma=self.gamma)
+        td_target = rewards + self.gamma * next_state_values * (1 - done)
         # ---------------------------------------------------- #
 
         # ---------------------------------------------------- #
-        advantages = returns - self.b
+        # returns = discount_rewards(rewards, gamma=self.gamma)
+        # ---------------------------------------------------- #
+
+        # ---------------------------------------------------- #
+        advantages = td_target - state_values
+        # ---------------------------------------------------- #
+
+        # ---------------------------------------------------- #
+        # advantages = returns - self.b
         # ---------------------------------------------------- #
 
         
@@ -163,8 +167,8 @@ class Agent(object):
         # advantages_std = advantages.std().item()
 
         # ------------------------------------ #
-        discounted_returns_mean = returns.mean().item()
-        discounted_returns_std = returns.std().item()
+        discounted_returns_mean = td_target.mean().item()
+        discounted_returns_std = td_target.std().item()
         # ------------------------------------ #
 
         # ------------------------------------ #
@@ -175,7 +179,7 @@ class Agent(object):
         # ---------------------------------------------------- #
         self.discounted_returns_mean_log.append(discounted_returns_mean)
         self.discounted_returns_std_log.append(discounted_returns_std)
-        self.discounted_returns_variance_log.append(np.var(returns.detach().cpu().numpy()))
+        self.discounted_returns_variance_log.append(np.var(td_target.detach().cpu().numpy()))
 
         self.advantages_mean_log.append(advantages_mean)
         self.advantages_std_log.append(advantages_std)
@@ -204,18 +208,21 @@ class Agent(object):
         # self.advantages_std_log.append(advantages_std)
         
 
-        # # === Actor loss ===
-        # actor_loss = -(action_log_probs * advantages.detach()).mean()
+        # === Actor loss ===
+        actor_loss = -(action_log_probs * advantages.detach()).mean()
 
-        # # Critic loss (regression: V(s) ≈ TD target)
-        # critic_loss = F.mse_loss(state_values, td_target.detach())
+        # Critic loss (regression: V(s) ≈ TD target)
+        critic_loss = F.mse_loss(state_values, td_target.detach())
 
         # === Total loss: actor + critic ===
         # Note: We can also use a weighted sum if we want to balance actor and critic losses 
         # === Total loss: actor + 0.5 * critic ===
         # loss = actor_loss + (0.5 * critic_loss) - (self.beta * entropy) # Add entropy term for exploration
 
-        loss = -(action_log_probs * advantages).mean()
+        loss = actor_loss + critic_loss  # No entropy term for now
+
+        # loss = -(action_log_probs * advantages).mean()
+
 
         #   - compute gradients and step the optimizer
         self.optimizer.zero_grad()
@@ -237,7 +244,7 @@ class Agent(object):
         """ state -> action (3-d), action_log_densities """
         x = torch.from_numpy(state).float().to(self.train_device)
 
-        normal_dist = self.policy(x)
+        normal_dist, _ = self.policy(x)
 
         if evaluation:  # Return mean
             return normal_dist.mean, None

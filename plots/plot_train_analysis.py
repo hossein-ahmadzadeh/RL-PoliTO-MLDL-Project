@@ -3,7 +3,7 @@ import matplotlib.pyplot as plt
 import os
 
 # === Configurable model name ===
-model_name = "model_reinforce_with_baseline_simple_norm_tanh"  # <-- Updated to your current model
+model_name = "model_actor_critic_simple_norm_tanh"  # <-- Updated to your current model
 
 # === Paths ===
 analysis_dir = f"analysis/{model_name}"

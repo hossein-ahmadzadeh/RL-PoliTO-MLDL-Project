@@ -11,9 +11,9 @@ from agent import Agent, Policy
 def parse_args():
     parser = argparse.ArgumentParser()
     parser.add_argument('--n-episodes', default=10000, type=int)
-    parser.add_argument('--print-every', default=5000, type=int)
+    parser.add_argument('--print-every', default=1000, type=int)
     parser.add_argument('--device', default='cpu', type=str)
-    parser.add_argument('--model-name', default='model_reinforce_with_baseline_simple_norm_tanh', type=str)
+    parser.add_argument('--model-name', default='model_actor_critic_simple_norm_tanh', type=str)
     return parser.parse_args()
 
 args = parse_args()
@@ -108,12 +108,6 @@ def main():
 	np.save(f"{log_dir}/actions_log.npy", np.array(agent.actions_log))
 	np.save(f"{log_dir}/entropy_log.npy", np.array(agent.entropy_log))
 
-	# np.save(f"{log_dir}/advantages_mean_log.npy", np.array(agent.advantages_mean_log))
-	# np.save(f"{log_dir}/advantages_std_log.npy", np.array(agent.advantages_std_log))
-	# np.save(f"{log_dir}/td_target_mean_log.npy", np.array(agent.td_target_mean_log))
-	# np.save(f"{log_dir}/td_target_std_log.npy", np.array(agent.td_target_std_log))
-
-	# ----------------------------------------------------------------------------------------------- #
 	np.save(f"{log_dir}/discounted_returns_mean_log.npy", np.array(agent.discounted_returns_mean_log))
 	np.save(f"{log_dir}/discounted_returns_std_log.npy", np.array(agent.discounted_returns_std_log))
 	np.save(f"{log_dir}/discounted_returns_variance_log.npy", np.array(agent.discounted_returns_variance_log))
@@ -121,19 +115,12 @@ def main():
 	np.save(f"{log_dir}/advantages_mean_log.npy", np.array(agent.advantages_mean_log))
 	np.save(f"{log_dir}/advantages_std_log.npy", np.array(agent.advantages_std_log))
 	np.save(f"{log_dir}/advantages_variance_log.npy", np.array(agent.advantages_variance_log))
-	# ----------------------------------------------------------------------------------------------- #
-
-	# np.save(f"{log_dir}/advantages_log.npy", np.array(agent.advantages_log, dtype=object))
-	# np.save(f"{log_dir}/td_target_log.npy", np.array(agent.td_target_log, dtype=object))
 
 	np.save(f"{analysis_dir}/episode_times.npy", np.array(times_per_episode))
 	np.save(f"{analysis_dir}/episode_rewards.npy", np.array(training_rewards_per_episode))
 	np.save(f"{analysis_dir}/losses.npy", np.array(losses_per_episode))
 	np.save(f"{analysis_dir}/episode_rewards_smoothed_100.npy", np.array(smoothed_training_rewards))
 	np.save(f"{analysis_dir}/episode_rewards_variance_100.npy", np.array(training_reward_variance_window))
-
-	# np.save(f"{analysis_dir}/advantages_variance_log.npy", np.array(agent.advantages_variance_log))
-	# np.save(f"{analysis_dir}/td_target_variance_log.npy", np.array(agent.td_target_variance_log))
 
 	# === Save model ===
 	torch.save(agent.policy.state_dict(), model_path)
