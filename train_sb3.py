@@ -15,6 +15,7 @@ import numpy as np
 import os
 import torch
 import argparse
+import time
 
 
 def parse_args():
@@ -23,38 +24,79 @@ def parse_args():
     return parser.parse_args()
 
 
-class EpisodeLogger(BaseCallback):
-    def __init__(self, log_dir='PPO/logs', verbose=0):
+class LoggerWithStop(BaseCallback):
+    def __init__(self, max_episodes=10_000, log_dir='PPO/logs', verbose=1, print_every=1000):
         super().__init__(verbose)
+        self.max_episodes = max_episodes
         self.log_dir = log_dir
         os.makedirs(self.log_dir, exist_ok=True)
         self.episode_rewards = []
         self.episode_lengths = []
+        self.wall_clock_times = []
         self.smoothed = []
         self.variance = []
+        self.recent_rewards = []
+        self.window_size = 100
+        self._episode_start_time = None
+        self.print_every = print_every
 
     def _on_step(self) -> bool:
-        infos = self.locals.get('infos', [])
-        for info in infos:
-            ep = info.get('episode')
-            if ep:
-                self.episode_rewards.append(ep['r'])
-                self.episode_lengths.append(ep['l'])
+        if self._episode_start_time is None:
+            self._episode_start_time = time.time()
 
-                window = self.episode_rewards[-100:]
-                if len(window) == 100:
-                    self.smoothed.append(np.mean(window))
-                    self.variance.append(np.var(window))
+        infos = self.locals.get("infos", [])
+        for info in infos:
+            ep = info.get("episode")
+            if ep:
+                reward = ep['r']
+                steps = ep['l']
+                sim_time = steps * 0.008
+                wall_time = time.time() - self._episode_start_time
+                self._episode_start_time = None
+
+                # Log all
+                self.episode_rewards.append(reward)
+                self.episode_lengths.append(sim_time)
+                self.wall_clock_times.append(wall_time)
+
+                self.recent_rewards.append(reward)
+                if len(self.recent_rewards) > self.window_size:
+                    self.recent_rewards.pop(0)
+
+                # Logging stats
+                episode_num = len(self.episode_rewards)
+                if len(self.recent_rewards) == self.window_size:
+                    smoothed = np.mean(self.recent_rewards)
+                    var = np.var(self.recent_rewards)
+                    self.smoothed.append(smoothed)
+                    self.variance.append(var)
+                else:
+                    smoothed = None
+                    var = None
+
+                # Print summary every N episodes
+                if self.verbose and episode_num % self.print_every == 0:
+                    print(f"--- Episode {episode_num}/{self.max_episodes} ---")
+                    print(f"  Reward: {reward:.2f}")
+                    if smoothed is not None:
+                        print(f"  Smoothed (100): {smoothed:.2f} | Variance: {var:.2f}")
+                    print(f"  Sim Time: {sim_time:.2f}s | Wall Time: {wall_time:.2f}s")
+                    print("-" * 40)
+
+                # Stop condition
+                if episode_num >= self.max_episodes:
+                    print(f"Reached {self.max_episodes} episodes. Stopping training.")
+                    return False
         return True
 
     def _on_training_end(self) -> None:
         np.save(os.path.join(self.log_dir, 'episode_rewards.npy'), np.array(self.episode_rewards))
-        np.save(os.path.join(self.log_dir, 'episode_times.npy'), np.array(self.episode_lengths))
-        np.save(os.path.join(self.log_dir, 'episode_rewards_smoothed_npy.npy'), np.array(self.smoothed))
+        np.save(os.path.join(self.log_dir, 'episode_times_simulated.npy'), np.array(self.episode_lengths))
+        np.save(os.path.join(self.log_dir, 'episode_times_wallclock.npy'), np.array(self.wall_clock_times))
+        np.save(os.path.join(self.log_dir, 'episode_rewards_smoothed_100.npy'), np.array(self.smoothed))
         np.save(os.path.join(self.log_dir, 'episode_rewards_variance_100.npy'), np.array(self.variance))
         if self.verbose:
             print(f"Saved logs to {self.log_dir}")
-
 
 
 
@@ -62,12 +104,19 @@ def main():
     args = parse_args()
     device = args.device
 
-    train_env = gym.make('CustomHopper-source-v0')
-    eval_env = gym.make('CustomHopper-target-v0')
+    source_env = gym.make('CustomHopper-source-v0')
+    target_env = gym.make('CustomHopper-target-v0')
 
-    print('State space:', train_env.observation_space)  # state-space
-    print('Action space:', train_env.action_space)  # action-space
-    print('Dynamics parameters:', train_env.get_parameters())  # masses of each link of the Hopper
+
+    print("=== Source Environment ===")
+    print("State space:", source_env.observation_space)
+    print("Action space:", source_env.action_space)
+    print("Dynamics parameters:", source_env.get_parameters())
+
+    print("\n=== Target Environment ===")
+    print("State space:", target_env.observation_space)
+    print("Action space:", target_env.action_space)
+    print("Dynamics parameters:", target_env.get_parameters())
 
     #
     # TASK 4 & 5: train and test policies on the Hopper env with stable-baselines3
@@ -78,16 +127,27 @@ def main():
     eval_env = Monitor(gym.make('CustomHopper-target-v0'))
 
     # Callbacks
-    eval_cb = EvalCallback(eval_env,
+    episode_cb = LoggerWithStop(
+        max_episodes=10_000,
+        verbose=1,
+        print_every=1000
+    )
+
+    eval_cb = EvalCallback(
+        eval_env,
         best_model_save_path='PPO/model',
         log_path='PPO/logs/',
-        eval_freq=5000, deterministic=True, render=False)
-    episode_cb = EpisodeLogger(verbose=1)
+        eval_freq=5000,
+        deterministic=True,
+        render=False
+    )
 
     model = PPO("MlpPolicy", train_env, verbose=1, device=device)
-    model.learn(total_timesteps=1_000_000,
-                callback=CallbackList([eval_cb, episode_cb]))
-    model.save('PPO/model/model_sb3_ppo.mdl')
+
+    model.learn(
+        total_timesteps=int(1e9),
+        callback=CallbackList([eval_cb, episode_cb])
+    )
 
     # Evaluation
     obs = eval_env.reset()
