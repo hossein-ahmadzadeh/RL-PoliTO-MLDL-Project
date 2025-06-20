@@ -14,6 +14,7 @@ from stable_baselines3.common.callbacks import BaseCallback
 from stable_baselines3.common.callbacks import EvalCallback, CallbackList
 import wandb
 import argparse
+import os
 
 def parse_args():
 	parser = argparse.ArgumentParser()
@@ -106,25 +107,31 @@ print("Best params [target]: ",best_params)
 wandb.finish()
 
 def main():
-    envname = "CustomHopper-source-v0"
-    test_env = gym.make(envname)
-    test_env = Monitor(test_env)
-    model = PPO.load(args.best_model_path+best_params["countsource"]+"_"+envname+"/best_model.zip")
-    mean_reward, std_reward = evaluate_policy(model, test_env, n_eval_episodes=50, render=False, warn=False)
-    print(f" [s-s] mean_reward:{mean_reward:.2f} +/- {std_reward:.2f}") #source -> source
+    env_src = "CustomHopper-source-v0"
+    run_src = best_params["source"]["run_id_suffix"]      # ← تغییر کلید
+    model_src_path = os.path.join(args.best_model_path, run_src, "best_model.zip")
     
-    envname = "CustomHopper-target-v0"
-    test_env = gym.make(envname)
-    test_env = Monitor(test_env)
-    model = PPO.load(args.best_model_path+best_params["countsource"]+"_"+"CustomHopper-source-v0"+"/best_model.zip")
-    mean_reward, std_reward = evaluate_policy(model, test_env, n_eval_episodes=50, render=False, warn=False)
-    print(f" [s-t]mean_reward:{mean_reward:.2f} +/- {std_reward:.2f}") #source -> target
+    test_env = Monitor(gym.make(env_src))
+    model = PPO.load(model_src_path)
+    mean_reward, std_reward = evaluate_policy(model, test_env,
+                                              n_eval_episodes=50, render=False, warn=False)
+    print(f"[s‑s] mean_reward: {mean_reward:.2f} ± {std_reward:.2f}")
 
-    test_env = gym.make(envname)
-    test_env = Monitor(test_env)
-    model = PPO.load(args.best_model_path+best_params["counttarget"]+"_"+envname+"+/best_model.zip")
-    mean_reward, std_reward = evaluate_policy(model, test_env, n_eval_episodes=50, render=False, warn=False)
-    print(f" [t-t]mean_reward:{mean_reward:.2f} +/- {std_reward:.2f}") #target -> target
+    env_tgt = "CustomHopper-target-v0"
+    test_env = Monitor(gym.make(env_tgt))
+    mean_reward, std_reward = evaluate_policy(model, test_env,
+                                              n_eval_episodes=50, render=False, warn=False)
+    print(f"[s‑t] mean_reward: {mean_reward:.2f} ± {std_reward:.2f}")
+ #source -> target
+
+    run_tgt = best_params["target"]["run_id_suffix"]      # ← تغییر کلید
+    model_tgt_path = os.path.join(args.best_model_path, run_tgt, "best_model.zip")
+    
+    test_env = Monitor(gym.make(env_tgt))
+    model = PPO.load(model_tgt_path)
+    mean_reward, std_reward = evaluate_policy(model, test_env,
+                                              n_eval_episodes=50, render=False, warn=False)
+    print(f"[t‑t] mean_reward: {mean_reward:.2f} ± {std_reward:.2f}") #target -> target
 
 if __name__ == '__main__':
     main()
