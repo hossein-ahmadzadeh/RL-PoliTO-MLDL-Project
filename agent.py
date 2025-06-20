@@ -37,12 +37,7 @@ class Policy(torch.nn.Module):
         """
             Critic network
         """
-        # TASK 3: critic network for actor-critic algorithm
 
-
-        self.fc1_critic = torch.nn.Linear(state_space, self.hidden)
-        self.fc2_critic = torch.nn.Linear(self.hidden, self.hidden)
-        self.fc3_critic_value = torch.nn.Linear(self.hidden, 1)
 
         self.init_weights()
 
@@ -69,13 +64,8 @@ class Policy(torch.nn.Module):
         """
             Critic
         """
-        # TASK 3: forward in the critic network
-
-        x_critic = self.tanh(self.fc1_critic(x))
-        x_critic = self.tanh(self.fc2_critic(x_critic))
-        state_value = self.fc3_critic_value(x_critic).squeeze(-1)
         
-        return normal_dist, state_value
+        return normal_dist
 
 
 class Agent(object):
@@ -90,38 +80,17 @@ class Agent(object):
         self.action_log_probs = []
         self.rewards = []
         self.done = []
-        # self.b = 20
-        # self.beta = 2e-3  # Entropy regularization coefficient
 
         self.mu_log = []         # Stores [μ1, μ2, μ3] per episode
         self.sigma_log = []      # Stores [σ1, σ2, σ3] per episode
-        self.actions_log = []    # Stores [a1, a2, a3] per step
         self.entropy_log = []    # Stores entropy of the action distribution per step
 
 
         # ---------------------------------------------------- #
-        self.discounted_returns_mean_log = []  # Log mean of discounted returns (TD targets)
-        self.discounted_returns_std_log = []   # Log std of discounted returns (TD targets)
-        self.discounted_returns_variance_log = []  # Log variance of discounted returns (TD targets)
+        self.discounted_returns_mean_log = []  # Log mean of discounted returns
+        self.discounted_returns_std_log = []   # Log std of discounted returns
+        self.discounted_returns_variance_log = []  # Log variance of discounted returns
         # ---------------------------------------------------- #
-
-        # ---------------------------------------------------- #
-        self.advantages_mean_log = []  # Log mean of advantages
-        self.advantages_std_log = []   # Log std of advantages
-        self.advantages_variance_log = []  # Log variance of advantages
-        # ---------------------------------------------------- #
-
-
-        # self.td_target_log = []
-        # self.td_target_variance_log = []
-        # self.td_target_mean_log = []  # Log mean of returns
-        # self.td_target_std_log = []   # Log std of returns
-
-        # self.advantages_log = []
-        # self.advantages_variance_log = []
-        # self.advantages_mean_log = [] # Log mean of advantages
-        # self.advantages_std_log = []  # Log std of advantages
-
 
     def update_policy(self):
         action_log_probs = torch.stack(self.action_log_probs, dim=0).to(self.train_device).squeeze(-1)
@@ -132,110 +101,35 @@ class Agent(object):
 
         self.states, self.next_states, self.action_log_probs, self.rewards, self.done = [], [], [], [], []
 
-        # === Get state-values from critic ===
-        with torch.no_grad():
-            _, next_state_values = self.policy(next_states)
-            
-        dist, state_values = self.policy(states)
-
-
-        # entropy = dist.entropy().sum(dim=-1).mean()
-        
-        # ---------------------------------------------------- #
-        # # Compute TD targets
-        td_target = rewards + self.gamma * next_state_values * (1 - done)
-        # ---------------------------------------------------- #
 
         # ---------------------------------------------------- #
-        # returns = discount_rewards(rewards, gamma=self.gamma)
+        returns = discount_rewards(rewards, gamma=self.gamma)
         # ---------------------------------------------------- #
-
-        # ---------------------------------------------------- #
-        advantages = td_target - state_values
-        # ---------------------------------------------------- #
-
-        # ---------------------------------------------------- #
-        # advantages = returns - self.b
-        # ---------------------------------------------------- #
-
-        
-        
-
-        # # === Compute Advantage: A(s) = G - V(s) ===
-        # advantages = td_target - state_values
-        # advantages_mean = advantages.mean().item()
-        # advantages_std = advantages.std().item()
 
         # ------------------------------------ #
-        discounted_returns_mean = td_target.mean().item()
-        discounted_returns_std = td_target.std().item()
-        # ------------------------------------ #
-
-        # ------------------------------------ #
-        advantages_mean = advantages.mean().item()
-        advantages_std = advantages.std().item()
+        discounted_returns_mean = returns.mean().item()
+        discounted_returns_std = returns.std().item()
         # ------------------------------------ #
 
         # ---------------------------------------------------- #
         self.discounted_returns_mean_log.append(discounted_returns_mean)
         self.discounted_returns_std_log.append(discounted_returns_std)
-        self.discounted_returns_variance_log.append(np.var(td_target.detach().cpu().numpy()))
-
-        self.advantages_mean_log.append(advantages_mean)
-        self.advantages_std_log.append(advantages_std)
-        self.advantages_variance_log.append(np.var(advantages.detach().cpu().numpy()))
-        # ---------------------------------------------------- #
-
+        self.discounted_returns_variance_log.append(np.var(returns.detach().cpu().numpy()))
 
         # -------------------NORMALIZATION-------------------- #
-        if advantages_std > 1e-6:  # Avoid division by near-zero std
-            advantages = (advantages - advantages_mean) / (advantages_std + 1e-8)
+        if discounted_returns_std > 1e-6:  # Avoid division by near-zero std
+            returns = (returns - discounted_returns_mean) / (discounted_returns_std + 1e-8)
         else:
-            advantages = advantages - advantages_mean  # Only subtract mean if std is too small
+            returns = returns - discounted_returns_mean  # Only subtract mean if std is too small
         # ---------------------------------------------------- #
 
-        # # === Logging for analysis ===
-        # self.td_target_log.append(td_target.detach().cpu().numpy())
-        # self.td_target_variance_log.append(np.var(td_target.detach().cpu().numpy()))
-        # self.td_target_mean_log.append(td_target.mean().item())
-        # self.td_target_std_log.append(td_target.std().item())
 
-        # self.advantages_log.append(advantages.detach().cpu().numpy())
-        # # Log variance of advantages before normalization
-        # self.advantages_variance_log.append(np.var((td_target - state_values).detach().cpu().numpy()))
-
-        # self.advantages_mean_log.append(advantages_mean)
-        # self.advantages_std_log.append(advantages_std)
-        
-
-        # === Actor loss ===
-        actor_loss = -(action_log_probs * advantages.detach()).mean()
-
-        # Critic loss (regression: V(s) ≈ TD target)
-        critic_loss = F.mse_loss(state_values, td_target.detach())
-
-        # === Total loss: actor + critic ===
-        # Note: We can also use a weighted sum if we want to balance actor and critic losses 
-        # === Total loss: actor + 0.5 * critic ===
-        # loss = actor_loss + (0.5 * critic_loss) - (self.beta * entropy) # Add entropy term for exploration
-
-        loss = actor_loss + critic_loss  # No entropy term for now
-
-        # loss = -(action_log_probs * advantages).mean()
-
+        loss = -(action_log_probs * returns).mean()
 
         #   - compute gradients and step the optimizer
         self.optimizer.zero_grad()
         loss.backward()
         self.optimizer.step()
-
-        #
-        # TASK 3:
-        #   - compute boostrapped discounted return estimates
-        #   - compute advantage terms
-        #   - compute actor loss and critic loss
-        #   - compute gradients and step the optimizer
-        #
 
         return loss.item() # Return the loss for monitoring   
 
@@ -244,25 +138,17 @@ class Agent(object):
         """ state -> action (3-d), action_log_densities """
         x = torch.from_numpy(state).float().to(self.train_device)
 
-        normal_dist, _ = self.policy(x)
+        normal_dist = self.policy(x)
 
         if evaluation:  # Return mean
             return normal_dist.mean, None
 
         else:   # Sample from the distribution
-
-            # --------------Squash the action into [-1, 1] using tanh-------------- #
-            u = normal_dist.sample()
-            action = torch.tanh(u)  # squash into [-1, 1]
-
-            log_prob = normal_dist.log_prob(u) - torch.log(1 - action.pow(2) + 1e-6)
-            action_log_prob = log_prob.sum()
-            # --------------------------------------------------------------------- #
             
             # -----------------------NO SQUASH---------------------- #
             # Not Squashing the action
-            # action = normal_dist.sample()
-            # action_log_prob = normal_dist.log_prob(action).sum()
+            action = normal_dist.sample()
+            action_log_prob = normal_dist.log_prob(action).sum()
             # ------------------------------------------------------ #
 
 
@@ -274,8 +160,6 @@ class Agent(object):
             # Logging for monitoring Mean (μ) and Standard Deviation (σ) and actions (a)
             mu = normal_dist.mean.detach().cpu().numpy()
             sigma = normal_dist.stddev.detach().cpu().numpy()
-            action_np = action.detach().cpu().numpy()
-
 
             # Monitor μ and σ only on first state per episode (optional via a flag)
             if len(self.states) == 0:  # first step of the episode
@@ -283,15 +167,6 @@ class Agent(object):
                     print(f"[WARNING] Unusual μ or σ -> μ: {mu}, σ: {sigma}")
                 self.mu_log.append(mu.tolist())
                 self.sigma_log.append(sigma.tolist())
-            
-
-            # Save all sampled actions
-            self.actions_log.append(action_np.tolist())  # save full [a1, a2, a3] list
-
-            # # Warn only if out-of-bounds
-            # if np.any(np.abs(action_np) > 1.0):
-            #     print(f"[WARNING] Out-of-bounds action: {action_np}")
-
 
             return action, action_log_prob
 
