@@ -1,0 +1,16 @@
+{"time":"2025-06-19T13:52:30.098124383+02:00","level":"INFO","msg":"stream: starting","core version":"0.20.1","symlink path":"/home/fatemehhsaleh/RL-PoliTO-MLDL-Project/wandb/run-20250619_135229-v4f0l9zg/logs/debug-core.log"}
+{"time":"2025-06-19T13:52:30.860789665+02:00","level":"INFO","msg":"stream: created new stream","id":"v4f0l9zg"}
+{"time":"2025-06-19T13:52:30.860829465+02:00","level":"INFO","msg":"stream: started","id":"v4f0l9zg"}
+{"time":"2025-06-19T13:52:30.860921965+02:00","level":"INFO","msg":"writer: Do: started","stream_id":"v4f0l9zg"}
+{"time":"2025-06-19T13:52:30.860996365+02:00","level":"INFO","msg":"handler: started","stream_id":"v4f0l9zg"}
+{"time":"2025-06-19T13:52:30.860992665+02:00","level":"INFO","msg":"sender: started","stream_id":"v4f0l9zg"}
+{"time":"2025-06-19T13:52:31.06740546+02:00","level":"INFO","msg":"Starting system monitor"}
+{"time":"2025-06-19T14:07:51.947806083+02:00","level":"INFO","msg":"Stopping system monitor"}
+{"time":"2025-06-19T14:07:51.947886083+02:00","level":"INFO","msg":"Stopped system monitor"}
+{"time":"2025-06-19T14:07:52.623397999+02:00","level":"INFO","msg":"fileTransfer: Close: file transfer manager closed"}
+{"time":"2025-06-19T14:07:52.871463104+02:00","level":"INFO","msg":"handler: operation stats","stats":{}}
+{"time":"2025-06-19T14:07:52.875453005+02:00","level":"INFO","msg":"stream: closing","id":"v4f0l9zg"}
+{"time":"2025-06-19T14:07:52.875502905+02:00","level":"INFO","msg":"handler: closed","stream_id":"v4f0l9zg"}
+{"time":"2025-06-19T14:07:52.875531805+02:00","level":"INFO","msg":"writer: Close: closed","stream_id":"v4f0l9zg"}
+{"time":"2025-06-19T14:07:52.875549405+02:00","level":"INFO","msg":"sender: closed","stream_id":"v4f0l9zg"}
+{"time":"2025-06-19T14:07:52.875599005+02:00","level":"INFO","msg":"stream: closed","id":"v4f0l9zg"}

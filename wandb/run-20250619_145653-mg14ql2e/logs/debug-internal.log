@@ -1,0 +1,17 @@
+{"time":"2025-06-19T14:56:54.492643865+02:00","level":"INFO","msg":"stream: starting","core version":"0.20.1","symlink path":"/home/fatemehhsaleh/RL-PoliTO-MLDL-Project/wandb/run-20250619_145653-mg14ql2e/logs/debug-core.log"}
+{"time":"2025-06-19T14:56:56.249079857+02:00","level":"INFO","msg":"stream: created new stream","id":"mg14ql2e"}
+{"time":"2025-06-19T14:56:56.249112657+02:00","level":"INFO","msg":"stream: started","id":"mg14ql2e"}
+{"time":"2025-06-19T14:56:56.249177357+02:00","level":"INFO","msg":"handler: started","stream_id":"mg14ql2e"}
+{"time":"2025-06-19T14:56:56.249208257+02:00","level":"INFO","msg":"writer: Do: started","stream_id":"mg14ql2e"}
+{"time":"2025-06-19T14:56:56.249543857+02:00","level":"INFO","msg":"sender: started","stream_id":"mg14ql2e"}
+{"time":"2025-06-19T14:56:56.504415852+02:00","level":"INFO","msg":"Starting system monitor"}
+{"time":"2025-06-19T15:05:33.06832343+02:00","level":"INFO","msg":"api: retrying error","error":"Post \"https://api.wandb.ai/files/fatemehhsaleh-politecnico-di-torino/F_MldlRLproject_TuningPPO_Source_Target/mg14ql2e/file_stream\": unexpected EOF"}
+{"time":"2025-06-19T15:15:40.623656203+02:00","level":"INFO","msg":"Stopping system monitor"}
+{"time":"2025-06-19T15:15:40.623731803+02:00","level":"INFO","msg":"Stopped system monitor"}
+{"time":"2025-06-19T15:15:41.254890143+02:00","level":"INFO","msg":"fileTransfer: Close: file transfer manager closed"}
+{"time":"2025-06-19T15:15:41.472593085+02:00","level":"INFO","msg":"handler: operation stats","stats":{}}
+{"time":"2025-06-19T15:15:41.477932281+02:00","level":"INFO","msg":"stream: closing","id":"mg14ql2e"}
+{"time":"2025-06-19T15:15:41.478033781+02:00","level":"INFO","msg":"handler: closed","stream_id":"mg14ql2e"}
+{"time":"2025-06-19T15:15:41.478052281+02:00","level":"INFO","msg":"writer: Close: closed","stream_id":"mg14ql2e"}
+{"time":"2025-06-19T15:15:41.478091481+02:00","level":"INFO","msg":"sender: closed","stream_id":"mg14ql2e"}
+{"time":"2025-06-19T15:15:41.478139381+02:00","level":"INFO","msg":"stream: closed","id":"mg14ql2e"}

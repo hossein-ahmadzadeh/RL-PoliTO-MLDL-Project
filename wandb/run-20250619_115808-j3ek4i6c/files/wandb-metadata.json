@@ -1,0 +1,42 @@
+{
+  "os": "Linux-6.6.87.2-microsoft-standard-WSL2-x86_64-with-glibc2.17",
+  "python": "CPython 3.8.20",
+  "startedAt": "2025-06-19T09:58:08.596511Z",
+  "program": "/home/fatemehhsaleh/RL-PoliTO-MLDL-Project/train_sb3.py",
+  "codePath": "train_sb3.py",
+  "git": {
+    "remote": "https://github.com/hossein-ahmadzadeh/RL-PoliTO-MLDL-Project.git",
+    "commit": "3dd1e21c6eafc3d6c952ea340a9f94b80d7f8df2"
+  },
+  "email": "fatemehhsaleh@gmail.com",
+  "root": "/home/fatemehhsaleh/RL-PoliTO-MLDL-Project",
+  "host": "Fateme",
+  "executable": "/home/fatemehhsaleh/miniconda3/envs/hopper38/bin/python",
+  "codePathLocal": "train_sb3.py",
+  "cpu_count": 4,
+  "cpu_count_logical": 8,
+  "gpu": "NVIDIA GeForce MX230",
+  "gpu_count": 1,
+  "disk": {
+    "/": {
+      "total": "1081101176832",
+      "used": "25432965120"
+    }
+  },
+  "memory": {
+    "total": "6134403072"
+  },
+  "cpu": {
+    "count": 4,
+    "countLogical": 8
+  },
+  "gpu_nvidia": [
+    {
+      "name": "NVIDIA GeForce MX230",
+      "memoryTotal": "2147483648",
+      "architecture": "Pascal",
+      "uuid": "GPU-d65ab6d1-0ee6-1c50-949b-02c8f532871c"
+    }
+  ],
+  "cudaVersion": "11.6"
+}

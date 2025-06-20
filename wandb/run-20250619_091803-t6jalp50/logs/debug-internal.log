@@ -1,0 +1,7 @@
+{"time":"2025-06-19T09:18:03.952404755+02:00","level":"INFO","msg":"stream: starting","core version":"0.20.1","symlink path":"/home/fatemehhsaleh/RL-PoliTO-MLDL-Project/wandb/run-20250619_091803-t6jalp50/logs/debug-core.log"}
+{"time":"2025-06-19T09:18:05.190956581+02:00","level":"INFO","msg":"stream: created new stream","id":"t6jalp50"}
+{"time":"2025-06-19T09:18:05.191016981+02:00","level":"INFO","msg":"stream: started","id":"t6jalp50"}
+{"time":"2025-06-19T09:18:05.191103281+02:00","level":"INFO","msg":"writer: Do: started","stream_id":"t6jalp50"}
+{"time":"2025-06-19T09:18:05.191172181+02:00","level":"INFO","msg":"handler: started","stream_id":"t6jalp50"}
+{"time":"2025-06-19T09:18:05.191202381+02:00","level":"INFO","msg":"sender: started","stream_id":"t6jalp50"}
+{"time":"2025-06-19T09:18:05.515664635+02:00","level":"INFO","msg":"Starting system monitor"}

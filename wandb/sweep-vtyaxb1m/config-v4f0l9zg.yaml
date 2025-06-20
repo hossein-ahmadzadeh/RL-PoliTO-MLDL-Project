@@ -1,0 +1,8 @@
+wandb_version: 1
+
+clip_range:
+  value: 0.3133241406062989
+entropy_coefficient:
+  value: 0.005544514824250296
+learning_rate:
+  value: 0.0009134908584890842

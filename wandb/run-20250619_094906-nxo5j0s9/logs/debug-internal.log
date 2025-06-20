@@ -1,0 +1,16 @@
+{"time":"2025-06-19T09:49:07.855451681+02:00","level":"INFO","msg":"stream: starting","core version":"0.20.1","symlink path":"/home/fatemehhsaleh/RL-PoliTO-MLDL-Project/wandb/run-20250619_094906-nxo5j0s9/logs/debug-core.log"}
+{"time":"2025-06-19T09:49:11.516210662+02:00","level":"INFO","msg":"stream: created new stream","id":"nxo5j0s9"}
+{"time":"2025-06-19T09:49:11.516312262+02:00","level":"INFO","msg":"stream: started","id":"nxo5j0s9"}
+{"time":"2025-06-19T09:49:11.517894963+02:00","level":"INFO","msg":"handler: started","stream_id":"nxo5j0s9"}
+{"time":"2025-06-19T09:49:11.518095963+02:00","level":"INFO","msg":"sender: started","stream_id":"nxo5j0s9"}
+{"time":"2025-06-19T09:49:11.518865063+02:00","level":"INFO","msg":"writer: Do: started","stream_id":"nxo5j0s9"}
+{"time":"2025-06-19T09:49:11.844492593+02:00","level":"INFO","msg":"Starting system monitor"}
+{"time":"2025-06-19T10:15:47.195026266+02:00","level":"INFO","msg":"Stopping system monitor"}
+{"time":"2025-06-19T10:15:47.195746265+02:00","level":"INFO","msg":"Stopped system monitor"}
+{"time":"2025-06-19T10:15:48.172424864+02:00","level":"INFO","msg":"handler: operation stats","stats":{"operations":[{"desc":"uploading output.log","runtime_seconds":0.731278576,"progress":"12.7KB/12.7KB"},{"desc":"uploading wandb-summary.json","runtime_seconds":0.731040876,"progress":"202B/202B"},{"desc":"uploading config.yaml","runtime_seconds":0.487481651,"progress":"502B/502B"}],"total_operations":3}}
+{"time":"2025-06-19T10:15:48.26638662+02:00","level":"INFO","msg":"fileTransfer: Close: file transfer manager closed"}
+{"time":"2025-06-19T10:15:48.608603994+02:00","level":"INFO","msg":"stream: closing","id":"nxo5j0s9"}
+{"time":"2025-06-19T10:15:48.608736194+02:00","level":"INFO","msg":"handler: closed","stream_id":"nxo5j0s9"}
+{"time":"2025-06-19T10:15:48.608814994+02:00","level":"INFO","msg":"writer: Close: closed","stream_id":"nxo5j0s9"}
+{"time":"2025-06-19T10:15:48.608971693+02:00","level":"INFO","msg":"sender: closed","stream_id":"nxo5j0s9"}
+{"time":"2025-06-19T10:15:48.608991593+02:00","level":"INFO","msg":"stream: closed","id":"nxo5j0s9"}
