@@ -1,0 +1,46 @@
+{
+  "os": "Linux-5.15.167.4-microsoft-standard-WSL2-x86_64-with-glibc2.31",
+  "python": "CPython 3.9.5",
+  "startedAt": "2025-06-20T21:16:58.049124Z",
+  "args": [
+    "--device",
+    "cuda"
+  ],
+  "program": "/app/train.py",
+  "codePath": "train.py",
+  "git": {
+    "remote": "https://github.com/hossein-ahmadzadeh/RL-PoliTO-MLDL-Project.git",
+    "commit": "051383fccd0d7ec5e311e1cfe0bfcaf4430c59ed"
+  },
+  "email": "hossein.ahmadzadeh.edu@gmail.com",
+  "root": "/app",
+  "host": "4ad148a0b15a",
+  "executable": "/usr/bin/python",
+  "codePathLocal": "train.py",
+  "cpu_count": 10,
+  "cpu_count_logical": 20,
+  "gpu": "NVIDIA GeForce RTX 3060 Laptop GPU",
+  "gpu_count": 1,
+  "disk": {
+    "/": {
+      "total": "1081101176832",
+      "used": "20791713792"
+    }
+  },
+  "memory": {
+    "total": "8131031040"
+  },
+  "cpu": {
+    "count": 10,
+    "countLogical": 20
+  },
+  "gpu_nvidia": [
+    {
+      "name": "NVIDIA GeForce RTX 3060 Laptop GPU",
+      "memoryTotal": "6442450944",
+      "architecture": "Ampere",
+      "uuid": "GPU-38ec64be-0174-7748-2335-a698ae8c1c10"
+    }
+  ],
+  "cudaVersion": "12.9"
+}

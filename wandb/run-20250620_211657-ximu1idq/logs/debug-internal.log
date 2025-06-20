@@ -1,0 +1,17 @@
+{"time":"2025-06-20T21:16:58.050184004Z","level":"INFO","msg":"stream: starting","core version":"0.20.1","symlink path":"/app/wandb/run-20250620_211657-ximu1idq/logs/debug-core.log"}
+{"time":"2025-06-20T21:16:58.420654061Z","level":"INFO","msg":"stream: created new stream","id":"ximu1idq"}
+{"time":"2025-06-20T21:16:58.420718724Z","level":"INFO","msg":"stream: started","id":"ximu1idq"}
+{"time":"2025-06-20T21:16:58.420741696Z","level":"INFO","msg":"handler: started","stream_id":"ximu1idq"}
+{"time":"2025-06-20T21:16:58.42077567Z","level":"INFO","msg":"sender: started","stream_id":"ximu1idq"}
+{"time":"2025-06-20T21:16:58.420781684Z","level":"INFO","msg":"writer: Do: started","stream_id":"ximu1idq"}
+{"time":"2025-06-20T21:16:58.756433801Z","level":"INFO","msg":"Starting system monitor"}
+{"time":"2025-06-20T21:40:33.048736371Z","level":"INFO","msg":"api: retrying error","error":"Post \"https://api.wandb.ai/graphql\": unexpected EOF"}
+{"time":"2025-06-20T22:03:55.606016203Z","level":"INFO","msg":"Stopping system monitor"}
+{"time":"2025-06-20T22:03:55.606155081Z","level":"INFO","msg":"Stopped system monitor"}
+{"time":"2025-06-20T22:03:56.616911604Z","level":"INFO","msg":"handler: operation stats","stats":{"operations":[{"desc":"uploading models/REINFORCE-Baseline20.mdl","runtime_seconds":0.259269867,"progress":"23.1KB/23.1KB"}],"total_operations":1}}
+{"time":"2025-06-20T22:03:56.745310599Z","level":"INFO","msg":"fileTransfer: Close: file transfer manager closed"}
+{"time":"2025-06-20T22:03:57.068286161Z","level":"INFO","msg":"stream: closing","id":"ximu1idq"}
+{"time":"2025-06-20T22:03:57.068345367Z","level":"INFO","msg":"handler: closed","stream_id":"ximu1idq"}
+{"time":"2025-06-20T22:03:57.068367431Z","level":"INFO","msg":"writer: Close: closed","stream_id":"ximu1idq"}
+{"time":"2025-06-20T22:03:57.068500977Z","level":"INFO","msg":"sender: closed","stream_id":"ximu1idq"}
+{"time":"2025-06-20T22:03:57.068508803Z","level":"INFO","msg":"stream: closed","id":"ximu1idq"}
