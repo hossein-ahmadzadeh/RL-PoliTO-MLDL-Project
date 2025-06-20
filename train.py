@@ -45,6 +45,7 @@ def main():
 	# Logs per episode
 	training_rewards_per_episode = []       # Total reward collected in each episode
 	times_per_episode = []                  # Duration of each episode
+	simulated_times_per_episode = []        # Simulated time per episode (assuming 0.008s per step)
 	losses_per_episode = []                 # Policy loss recorded per episode
 
 	# Rolling window metrics for smoothing and stability analysis
@@ -60,6 +61,7 @@ def main():
 		start_time = time.time()
 		done = False
 		train_reward = 0
+		step_count = 0  
 		state = env.reset()
 
 		while not done:
@@ -68,6 +70,7 @@ def main():
 			state, reward, done, _ = env.step(action.detach().cpu().numpy())
 			agent.store_outcome(previous_state, state, action_probabilities, reward, done)
 			train_reward += reward
+			step_count += 1  # <- Count the steps
 
 		loss = agent.update_policy()
 		losses_per_episode.append(loss)
@@ -75,6 +78,7 @@ def main():
 		end_time = time.time()
 		training_rewards_per_episode.append(train_reward)
 		times_per_episode.append(end_time - start_time)
+		simulated_times_per_episode.append(step_count * 0.008)  # <- Add this for sim time
 
 
 		# -------------------------------------------------------- #
@@ -117,6 +121,7 @@ def main():
 	np.save(f"{log_dir}/advantages_variance_log.npy", np.array(agent.advantages_variance_log))
 
 	np.save(f"{analysis_dir}/episode_times.npy", np.array(times_per_episode))
+	np.save(f"{analysis_dir}/episode_times_simulated.npy", np.array(simulated_times_per_episode))
 	np.save(f"{analysis_dir}/episode_rewards.npy", np.array(training_rewards_per_episode))
 	np.save(f"{analysis_dir}/losses.npy", np.array(losses_per_episode))
 	np.save(f"{analysis_dir}/episode_rewards_smoothed_100.npy", np.array(smoothed_training_rewards))

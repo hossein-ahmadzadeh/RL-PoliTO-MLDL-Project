@@ -1,0 +1,3 @@
+Thu Jun 19 21:00:34 2025
+ERROR: Unknown camera type in mjv_updateCamera
+

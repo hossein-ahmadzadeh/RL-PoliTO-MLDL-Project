@@ -9,8 +9,9 @@ os.makedirs(output_dir, exist_ok=True)
 
 # === Load .npy logs ===
 episode_rewards = np.load(os.path.join(log_dir, "episode_rewards.npy"))
-episode_times = np.load(os.path.join(log_dir, "episode_times.npy"))
-smoothed_rewards = np.load(os.path.join(log_dir, "episode_rewards_smoothed_npy.npy"))
+episode_times_simulated = np.load(os.path.join(log_dir, "episode_times_simulated.npy"))
+episode_times_wallclock = np.load(os.path.join(log_dir, "episode_times_wallclock.npy"))
+smoothed_rewards = np.load(os.path.join(log_dir, "episode_rewards_smoothed_100.npy"))
 reward_variance = np.load(os.path.join(log_dir, "episode_rewards_variance_100.npy"))
 
 # === Load .npz evaluation results ===
@@ -33,8 +34,21 @@ def save_plot(x, y, title, ylabel, filename, color="blue"):
 
 # === Plotting ===
 episodes = np.arange(1, len(episode_rewards) + 1)
+
+# Raw episode rewards
 save_plot(episodes, episode_rewards, "Raw Episode Rewards", "Reward", "episode_rewards", "green")
-save_plot(episodes, episode_times, "Episode Time (duration)", "Time (s)", "episode_times", "orange")
+
+# Smoothed rewards (moving average)
 save_plot(np.arange(1, len(smoothed_rewards) + 1), smoothed_rewards, "Smoothed Rewards (window=100)", "Reward", "episode_rewards_smoothed", "blue")
+
+# Reward variance
 save_plot(np.arange(1, len(reward_variance) + 1), reward_variance, "Reward Variance (window=100)", "Variance", "episode_rewards_variance", "purple")
+
+# Simulated episode time durations
+save_plot(episodes, episode_times_simulated, "Simulated Episode Times", "Time (simulated units)", "episode_times_simulated", "orange")
+
+# Wall-clock episode time durations
+save_plot(episodes, episode_times_wallclock, "Wallclock Episode Times", "Time (s)", "episode_times_wallclock", "red")
+
+# Evaluation reward mean over timesteps
 save_plot(eval_timesteps, eval_mean_rewards, "Evaluation Reward Mean vs Timesteps", "Eval Reward", "evaluation_mean_rewards", "crimson")
