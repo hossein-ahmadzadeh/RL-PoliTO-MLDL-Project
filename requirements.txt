@@ -24,3 +24,4 @@ pyvirtualdisplay
 imageio
 termcolor
 psutil
+wandb

@@ -1,46 +1,72 @@
-"""Sample script for training a control policy on the Hopper environment
-   using stable-baselines3 (https://stable-baselines3.readthedocs.io/en/master/)
-
-    Read the stable-baselines3 documentation and implement a training
-    pipeline with an RL algorithm of your choice between PPO and SAC.
-"""
 import gym
-from env.custom_hopper import *
-
-from stable_baselines3 import PPO  # or SAC
-from stable_baselines3.common.callbacks import BaseCallback
-from stable_baselines3.common.callbacks import EvalCallback, CallbackList
-from stable_baselines3.common.monitor import Monitor
-import numpy as np
 import os
-import torch
-import argparse
 import time
-
+import wandb
+import numpy as np
+import argparse
+from env.custom_hopper import *
+from stable_baselines3 import PPO
+from stable_baselines3.common.monitor import Monitor
+from stable_baselines3.common.callbacks import BaseCallback, EvalCallback, CallbackList
+from stable_baselines3.common.evaluation import evaluate_policy
 
 def parse_args():
     parser = argparse.ArgumentParser()
-    parser.add_argument('--device', default='cpu', choices=['cpu', 'cuda'], help='Device to train/predict on')
+    parser.add_argument('--timesteps', default=5000000, type=int)
+    parser.add_argument('--save-freq', default=50000, type=int)
+    parser.add_argument('--best-model-path', default='./BestModelTuning/model', type=str)
+    parser.add_argument('--device', default='cpu', choices=['cpu', 'cuda'], help='Training device')
     return parser.parse_args()
 
+args = parse_args()
+
+sweep_configuration = {
+    "method": "random",
+    "name": "ppo_hopper_sweep",
+    "metric": {"name": "mean_reward", "goal": "maximize"},
+    "parameters": {
+        "learning_rate": {"min": 1e-4, "max": 1e-3},
+        "clip_range": {"min": 0.15, "max": 0.3},
+        "entropy_coefficient": {"min": 0.005, "max": 0.02},
+        "gamma": {"min": 0.95, "max": 0.99},
+        "gae_lambda": {"min": 0.9, "max": 0.99},
+        "n_steps": {"values": [1024, 2048, 4096]},
+        "batch_size": {"values": [64, 128, 256]}
+    }
+}
+
+class WandCallback(BaseCallback):
+    def __init__(self, verbose=0):
+        super().__init__(verbose)
+
+    def _on_step(self) -> bool:
+        if any(self.locals["dones"]):
+            wandb.log({
+                "reward": self.locals['infos'][0]['episode']['r'],
+                "step": self.num_timesteps
+            })
+        return True
 
 class LoggerWithStop(BaseCallback):
-    def __init__(self, max_episodes=10_000, log_dir='PPO/logs', verbose=1, print_every=1000):
+    def __init__(self, max_episodes=10000, log_dir='PPO/logs', print_every=1000, verbose=1):
         super().__init__(verbose)
         self.max_episodes = max_episodes
         self.log_dir = log_dir
         os.makedirs(self.log_dir, exist_ok=True)
+        self.print_every = print_every
         self.episode_rewards = []
-        self.episode_lengths = []
-        self.wall_clock_times = []
         self.smoothed = []
         self.variance = []
         self.recent_rewards = []
+        self.wall_times = []
+        self.episode_lengths = []
         self.window_size = 100
         self._episode_start_time = None
-        self.print_every = print_every
 
     def _on_step(self) -> bool:
+        if len(self.episode_rewards) >= self.max_episodes:
+            return True
+
         if self._episode_start_time is None:
             self._episode_start_time = time.time()
 
@@ -54,112 +80,143 @@ class LoggerWithStop(BaseCallback):
                 wall_time = time.time() - self._episode_start_time
                 self._episode_start_time = None
 
-                # Log all
                 self.episode_rewards.append(reward)
                 self.episode_lengths.append(sim_time)
-                self.wall_clock_times.append(wall_time)
-
+                self.wall_times.append(wall_time)
                 self.recent_rewards.append(reward)
+
                 if len(self.recent_rewards) > self.window_size:
                     self.recent_rewards.pop(0)
 
-                # Logging stats
-                episode_num = len(self.episode_rewards)
-                if len(self.recent_rewards) == self.window_size:
-                    smoothed = np.mean(self.recent_rewards)
-                    var = np.var(self.recent_rewards)
+                smoothed = np.mean(self.recent_rewards) if len(self.recent_rewards) == self.window_size else None
+                var = np.var(self.recent_rewards) if smoothed is not None else None
+
+                if smoothed is not None:
                     self.smoothed.append(smoothed)
                     self.variance.append(var)
-                else:
-                    smoothed = None
-                    var = None
 
-                # Print summary every N episodes
-                if self.verbose and episode_num % self.print_every == 0:
-                    print(f"--- Episode {episode_num}/{self.max_episodes} ---")
+                log_data = {
+                    "episode_reward": reward,
+                    "sim_time": sim_time,
+                    "wall_time": wall_time,
+                    "episode_num": len(self.episode_rewards)
+                }
+                if smoothed is not None:
+                    log_data["reward_smoothed"] = smoothed
+                    log_data["reward_variance"] = var
+                wandb.log(log_data)
+
+                if self.verbose and len(self.episode_rewards) % self.print_every == 0:
+                    print(f"--- Episode {len(self.episode_rewards)} ---")
                     print(f"  Reward: {reward:.2f}")
-                    if smoothed is not None:
-                        print(f"  Smoothed (100): {smoothed:.2f} | Variance: {var:.2f}")
+                    print(f"  Smoothed: {smoothed:.2f}" if smoothed else "")
                     print(f"  Sim Time: {sim_time:.2f}s | Wall Time: {wall_time:.2f}s")
                     print("-" * 40)
-
-                # Stop condition
-                if episode_num >= self.max_episodes:
-                    print(f"Reached {self.max_episodes} episodes. Stopping training.")
-                    return False
         return True
 
-    def _on_training_end(self) -> None:
-        np.save(os.path.join(self.log_dir, 'episode_rewards.npy'), np.array(self.episode_rewards))
-        np.save(os.path.join(self.log_dir, 'episode_times_simulated.npy'), np.array(self.episode_lengths))
-        np.save(os.path.join(self.log_dir, 'episode_times_wallclock.npy'), np.array(self.wall_clock_times))
-        np.save(os.path.join(self.log_dir, 'episode_rewards_smoothed_100.npy'), np.array(self.smoothed))
-        np.save(os.path.join(self.log_dir, 'episode_rewards_variance_100.npy'), np.array(self.variance))
-        if self.verbose:
-            print(f"Saved logs to {self.log_dir}")
+    def _on_training_end(self):
+        np.save(os.path.join(self.log_dir, 'episode_rewards.npy'), self.episode_rewards)
+        np.save(os.path.join(self.log_dir, 'episode_times_simulated.npy'), self.episode_lengths)
+        np.save(os.path.join(self.log_dir, 'episode_times_wallclock.npy'), self.wall_times)
+        np.save(os.path.join(self.log_dir, 'episode_rewards_smoothed_100.npy'), self.smoothed)
+        np.save(os.path.join(self.log_dir, 'episode_rewards_variance_100.npy'), self.variance)
 
+best_params = {
+    "source": {'best_mean' : -float('inf')},
+    "target": {'best_mean' : -float('inf')}
+}
 
+def objective(envname):
+    wandb.init(project="F_MldlRLproject_TuningPPO_Source_Target")
+
+    lr = wandb.config.learning_rate
+    ent = wandb.config.entropy_coefficient
+    clip = wandb.config.clip_range
+    gamma = wandb.config.gamma
+    gae_lambda = wandb.config.gae_lambda
+    n_steps = wandb.config.n_steps
+    batch_size = wandb.config.batch_size
+
+    train_env = Monitor(gym.make(envname))
+    logger_cb = LoggerWithStop(log_dir=f'PPO/logs/{envname}')
+    wandb_cb = WandCallback()
+
+    # Save always to a fixed folder
+    save_path = os.path.join(args.best_model_path, f"best_{envname}/")
+    eval_cb = EvalCallback(train_env, n_eval_episodes=50, eval_freq=args.save_freq,
+                           best_model_save_path=save_path, verbose=0)
+    callback = CallbackList([eval_cb, wandb_cb, logger_cb])
+
+    model = PPO("MlpPolicy", train_env,
+                learning_rate=lr,
+                ent_coef=ent,
+                clip_range=clip,
+                gamma=gamma,
+                gae_lambda=gae_lambda,
+                n_steps=n_steps,
+                batch_size=batch_size,
+                verbose=0,
+                device=args.device)
+
+    model.learn(total_timesteps=args.timesteps, callback=callback, progress_bar=True)
+
+    model = PPO.load(os.path.join(save_path, "best_model.zip"))
+    mean_reward, std_reward = evaluate_policy(model, train_env, n_eval_episodes=50)
+    wandb.log({"mean_reward": mean_reward, "std_reward": std_reward})
+
+    key = "source" if envname == "CustomHopper-source-v0" else "target"
+    if mean_reward > best_params[key]["best_mean"]:
+        best_params[key] = {
+            "learning_rate": lr,
+            "clip_range": clip,
+            "entropy_coefficient": ent,
+            "gamma": gamma,
+            "gae_lambda": gae_lambda,
+            "n_steps": n_steps,
+            "batch_size": batch_size,
+            "best_mean": mean_reward,
+            "best_std": std_reward
+        }
+
+    wandb.finish()
+    return mean_reward, std_reward
 
 def main():
-    args = parse_args()
-    device = args.device
+    sweep_id = wandb.sweep(sweep=sweep_configuration, project="F_MldlRLproject_TuningPPO_Source_Target")
 
-    source_env = gym.make('CustomHopper-source-v0')
-    target_env = gym.make('CustomHopper-target-v0')
+    wandb.agent(sweep_id, function=lambda: objective("CustomHopper-source-v0"), count=10)
+    print("Best params [source]:", best_params)
 
+    wandb.agent(sweep_id, function=lambda: objective("CustomHopper-target-v0"), count=10)
+    print("Best params [target]:", best_params)
 
-    print("=== Source Environment ===")
-    print("State space:", source_env.observation_space)
-    print("Action space:", source_env.action_space)
-    print("Dynamics parameters:", source_env.get_parameters())
+    def test_model(env_id):
+        path = os.path.join(args.best_model_path, f"best_{env_id}/best_model.zip")
+        test_env = Monitor(gym.make(env_id))
+        model = PPO.load(path)
+        return evaluate_policy(model, test_env, n_eval_episodes=50)
 
-    print("\n=== Target Environment ===")
-    print("State space:", target_env.observation_space)
-    print("Action space:", target_env.action_space)
-    print("Dynamics parameters:", target_env.get_parameters())
+    print("\n--- Final Evaluations ---")
+    ss = test_model("CustomHopper-source-v0")
+    st = test_model("CustomHopper-target-v0")
+    tt = test_model("CustomHopper-target-v0")
 
-    #
-    # TASK 4 & 5: train and test policies on the Hopper env with stable-baselines3
-    #
+    print(f"[s-s] mean_reward: {ss[0]:.2f} ± {ss[1]:.2f}")
+    print(f"[s-t] mean_reward: {st[0]:.2f} ± {st[1]:.2f}")
+    print(f"[t-t] mean_reward: {tt[0]:.2f} ± {tt[1]:.2f}")
 
-    # Env setup
-    train_env = Monitor(gym.make('CustomHopper-source-v0'))
-    eval_env = Monitor(gym.make('CustomHopper-target-v0'))
+    with open("final_results.txt", "w") as f:
+        f.write("=== Best Hyperparameters ===\n")
+        for domain in best_params:
+            f.write(f"{domain.upper()}:\n")
+            for k, v in best_params[domain].items():
+                f.write(f"  {k}: {v}\n")
+            f.write("\n")
 
-    # Callbacks
-    episode_cb = LoggerWithStop(
-        max_episodes=10_000,
-        verbose=1,
-        print_every=1000
-    )
+        f.write("=== Final Evaluations ===\n")
+        f.write(f"source→source (s→s): {ss[0]:.2f} ± {ss[1]:.2f}\n")
+        f.write(f"source→target (s→t) [lower bound]: {st[0]:.2f} ± {st[1]:.2f}\n")
+        f.write(f"target→target (t→t) [upper bound]: {tt[0]:.2f} ± {tt[1]:.2f}\n")
 
-    eval_cb = EvalCallback(
-        eval_env,
-        best_model_save_path='PPO/model',
-        log_path='PPO/logs/',
-        eval_freq=5000,
-        deterministic=True,
-        render=False
-    )
-
-    model = PPO("MlpPolicy", train_env, verbose=1, device=device)
-
-    model.learn(
-        total_timesteps=int(1e9),
-        callback=CallbackList([eval_cb, episode_cb])
-    )
-
-    # Evaluation
-    obs = eval_env.reset()
-    total_reward = 0
-    for _ in range(500):
-        action, _ = model.predict(obs, deterministic=True)
-        obs, reward, done, info = eval_env.step(action)
-        total_reward += reward
-        if done:
-            break
-    print("Total eval reward:", total_reward)
-
-
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()
