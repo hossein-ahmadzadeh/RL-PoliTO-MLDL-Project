@@ -25,13 +25,13 @@ sweep_configuration = {
     "name": "ppo_hopper_sweep",
     "metric": {"name": "mean_reward", "goal": "maximize"},
     "parameters": {
-        "learning_rate": {"min": 1e-4, "max": 1e-3},
-        "clip_range": {"min": 0.15, "max": 0.3},
+        "learning_rate": {"min": 5e-4, "max": 1e-3},
+        "clip_range": {"min": 0.25, "max": 0.35},
         "entropy_coefficient": {"min": 0.005, "max": 0.02},
-        "gamma": {"min": 0.95, "max": 0.99},
-        "gae_lambda": {"min": 0.9, "max": 0.99},
-        "n_steps": {"values": [1024, 2048, 4096]},
-        "batch_size": {"values": [64, 128, 256]}
+        "gamma": {"min": 0.97, "max": 0.99},
+        "gae_lambda": {"min": 0.95, "max": 0.99},
+        "n_steps": {"values": [2048, 4096]},
+        "batch_size": {"values": [64, 128]}
     }
 }
 
