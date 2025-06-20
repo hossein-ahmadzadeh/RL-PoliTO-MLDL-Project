@@ -14,7 +14,7 @@ def parse_args():
     parser.add_argument('--n-episodes', default=10000, type=int)
     parser.add_argument('--print-every', default=1000, type=int)
     parser.add_argument('--device', default='cuda', type=str)
-    parser.add_argument('--model-name', default='REINFORCE', type=str)
+    parser.add_argument('--model-name', default='ActorCritic', type=str)
     return parser.parse_args()
 
 args = parse_args()
@@ -125,9 +125,13 @@ def main():
     np.save(f"{log_dir}/sigma_log.npy", np.array(agent.sigma_log))
     np.save(f"{log_dir}/entropy_log.npy", np.array(agent.entropy_log))
 
-    np.save(f"{log_dir}/discounted_returns_mean_log.npy", np.array(agent.discounted_returns_mean_log))
-    np.save(f"{log_dir}/discounted_returns_std_log.npy", np.array(agent.discounted_returns_std_log))
-    np.save(f"{log_dir}/discounted_returns_variance_log.npy", np.array(agent.discounted_returns_variance_log))
+    np.save(f"{log_dir}/td_target_mean_log.npy", np.array(agent.td_target_mean_log))
+    np.save(f"{log_dir}/td_target_std_log.npy", np.array(agent.td_target_std_log))
+    np.save(f"{log_dir}/td_target_variance_log.npy", np.array(agent.td_target_variance_log))
+    
+    np.save(f"{log_dir}/advantages_mean_log.npy", np.array(agent.advantages_mean_log))
+    np.save(f"{log_dir}/advantages_std_log.npy", np.array(agent.advantages_std_log))
+    np.save(f"{log_dir}/advantages_variance_log.npy", np.array(agent.advantages_variance_log))
 
     np.save(f"{analysis_dir}/episode_times_wallclock.npy", np.array(times_per_episode))
     np.save(f"{analysis_dir}/episode_times_simulated.npy", np.array(sim_times_per_episode))
