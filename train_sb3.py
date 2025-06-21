@@ -13,7 +13,7 @@ from stable_baselines3.common.evaluation import evaluate_policy
 
 def parse_args():
     parser = argparse.ArgumentParser()
-    parser.add_argument('--timesteps', default=5000000, type=int)
+    parser.add_argument('--timesteps', default=3000000, type=int)
     parser.add_argument('--save-freq', default=50000, type=int)
     parser.add_argument('--best-model-path', default='./BestModelTuning/model', type=str)
     parser.add_argument('--device', default='cpu', choices=['cpu', 'cuda'], help='Training device')
