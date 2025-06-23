@@ -10,9 +10,9 @@ from stable_baselines3 import PPO
 
 def parse_args():
     parser = argparse.ArgumentParser()
-    parser.add_argument('--model-path', default='PPO/model/model_sb3_ppo.mdl', type=str, help='Path to PPO model file')
+    parser.add_argument('--model-path', default='BestModelTuning/model/9_CustomHopper-source-v0/best_model.zip', type=str, help='Path to PPO model file')
     parser.add_argument('--device', default='cpu', type=str, help='cpu or cuda')
-    parser.add_argument('--episodes', default=10, type=int, help='Number of test episodes')
+    parser.add_argument('--episodes', default=50, type=int, help='Number of test episodes')
     parser.add_argument('--render', default=False, action='store_true', help='Render the simulation')
     return parser.parse_args()
 
@@ -50,7 +50,7 @@ def main():
         print(f"Episode {episode + 1}: Reward = {total_reward:.2f}")
 
     # Save test results
-    test_log_dir = "test_analysis_sb3"
+    test_log_dir = "PPO_BEST_MODEL_TEST_NO_UDR"
     os.makedirs(test_log_dir, exist_ok=True)
 
     model_tag = os.path.basename(args.model_path).replace('.mdl', '')
