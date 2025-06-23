@@ -1,0 +1,1 @@
+{"cumulative_sim_time":23928.887999999853,"_step":3000189,"final_std_reward":338.0704649883542,"_runtime":6440.730665705,"rolling_reward_mean_100":594.9442999099999,"reward_per_episode":569.415342,"cumulative_wall_time":6388.4103310108185,"final_mean_reward":1203.69938254,"_timestamp":1.75069632974627e+09,"_wandb":{"runtime":6440},"rolling_reward_var_100":96236.98315567583}
