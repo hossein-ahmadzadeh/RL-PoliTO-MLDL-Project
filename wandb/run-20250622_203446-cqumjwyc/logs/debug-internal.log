@@ -1,0 +1,17 @@
+{"time":"2025-06-22T20:34:46.833527578Z","level":"INFO","msg":"stream: starting","core version":"0.20.1","symlink path":"/app/wandb/run-20250622_203446-cqumjwyc/logs/debug-core.log"}
+{"time":"2025-06-22T20:34:47.23873275Z","level":"INFO","msg":"stream: created new stream","id":"cqumjwyc"}
+{"time":"2025-06-22T20:34:47.238859753Z","level":"INFO","msg":"stream: started","id":"cqumjwyc"}
+{"time":"2025-06-22T20:34:47.238948832Z","level":"INFO","msg":"writer: Do: started","stream_id":"cqumjwyc"}
+{"time":"2025-06-22T20:34:47.239176428Z","level":"INFO","msg":"handler: started","stream_id":"cqumjwyc"}
+{"time":"2025-06-22T20:34:47.239282242Z","level":"INFO","msg":"sender: started","stream_id":"cqumjwyc"}
+{"time":"2025-06-22T20:34:47.699359038Z","level":"INFO","msg":"Starting system monitor"}
+{"time":"2025-06-22T21:27:52.024578475Z","level":"INFO","msg":"api: retrying error","error":"Post \"https://api.wandb.ai/graphql\": unexpected EOF"}
+{"time":"2025-06-22T22:46:25.631634945Z","level":"INFO","msg":"Stopping system monitor"}
+{"time":"2025-06-22T22:46:25.631839119Z","level":"INFO","msg":"Stopped system monitor"}
+{"time":"2025-06-22T22:46:26.599332501Z","level":"INFO","msg":"handler: operation stats","stats":{"operations":[{"desc":"uploading output.log","runtime_seconds":0.734199405,"progress":"27.2KB/27.2KB"},{"desc":"uploading config.yaml","runtime_seconds":0.298037352,"progress":"671B/671B"}],"total_operations":2}}
+{"time":"2025-06-22T22:46:26.694411128Z","level":"INFO","msg":"fileTransfer: Close: file transfer manager closed"}
+{"time":"2025-06-22T22:46:27.337276732Z","level":"INFO","msg":"stream: closing","id":"cqumjwyc"}
+{"time":"2025-06-22T22:46:27.337306793Z","level":"INFO","msg":"handler: closed","stream_id":"cqumjwyc"}
+{"time":"2025-06-22T22:46:27.337314186Z","level":"INFO","msg":"writer: Close: closed","stream_id":"cqumjwyc"}
+{"time":"2025-06-22T22:46:27.337398646Z","level":"INFO","msg":"sender: closed","stream_id":"cqumjwyc"}
+{"time":"2025-06-22T22:46:27.337403703Z","level":"INFO","msg":"stream: closed","id":"cqumjwyc"}

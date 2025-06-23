@@ -1,0 +1,34 @@
+_wandb:
+    value:
+        cli_version: 0.20.1
+        m: []
+        python_version: 3.9.5
+        t:
+            "1":
+                - 1
+            "2":
+                - 1
+            "3":
+                - 2
+                - 13
+                - 14
+                - 55
+                - 61
+            "4": 3.9.5
+            "5": 0.20.1
+            "12": 0.20.1
+            "13": linux-x86_64
+batch_size:
+    value: 128
+clip_range:
+    value: 0.3138004339257921
+entropy_coefficient:
+    value: 0.015425755197397605
+gae_lambda:
+    value: 0.9737196370842648
+gamma:
+    value: 0.9799337012130092
+learning_rate:
+    value: 0.0006857146267791706
+n_steps:
+    value: 4096

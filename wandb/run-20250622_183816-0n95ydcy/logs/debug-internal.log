@@ -1,0 +1,17 @@
+{"time":"2025-06-22T18:38:16.389350897Z","level":"INFO","msg":"stream: starting","core version":"0.20.1","symlink path":"/app/wandb/run-20250622_183816-0n95ydcy/logs/debug-core.log"}
+{"time":"2025-06-22T18:38:16.790612312Z","level":"INFO","msg":"stream: created new stream","id":"0n95ydcy"}
+{"time":"2025-06-22T18:38:16.790680441Z","level":"INFO","msg":"stream: started","id":"0n95ydcy"}
+{"time":"2025-06-22T18:38:16.790680827Z","level":"INFO","msg":"handler: started","stream_id":"0n95ydcy"}
+{"time":"2025-06-22T18:38:16.790719767Z","level":"INFO","msg":"sender: started","stream_id":"0n95ydcy"}
+{"time":"2025-06-22T18:38:16.79073457Z","level":"INFO","msg":"writer: Do: started","stream_id":"0n95ydcy"}
+{"time":"2025-06-22T18:38:17.021527333Z","level":"INFO","msg":"Starting system monitor"}
+{"time":"2025-06-22T19:27:38.049586162Z","level":"INFO","msg":"api: retrying error","error":"Post \"https://api.wandb.ai/graphql\": unexpected EOF"}
+{"time":"2025-06-22T20:34:40.863168007Z","level":"INFO","msg":"Stopping system monitor"}
+{"time":"2025-06-22T20:34:40.86373338Z","level":"INFO","msg":"Stopped system monitor"}
+{"time":"2025-06-22T20:34:41.648593957Z","level":"INFO","msg":"fileTransfer: Close: file transfer manager closed"}
+{"time":"2025-06-22T20:34:41.841383693Z","level":"INFO","msg":"handler: operation stats","stats":{"operations":[{"desc":"uploading history steps 15226-15227, summary, console lines 60-61","runtime_seconds":0.192508932}],"total_operations":1}}
+{"time":"2025-06-22T20:34:41.968249776Z","level":"INFO","msg":"stream: closing","id":"0n95ydcy"}
+{"time":"2025-06-22T20:34:41.968408508Z","level":"INFO","msg":"handler: closed","stream_id":"0n95ydcy"}
+{"time":"2025-06-22T20:34:41.968474457Z","level":"INFO","msg":"writer: Close: closed","stream_id":"0n95ydcy"}
+{"time":"2025-06-22T20:34:41.968602082Z","level":"INFO","msg":"sender: closed","stream_id":"0n95ydcy"}
+{"time":"2025-06-22T20:34:41.968736067Z","level":"INFO","msg":"stream: closed","id":"0n95ydcy"}

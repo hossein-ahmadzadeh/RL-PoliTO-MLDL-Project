@@ -1,0 +1,20 @@
+SOURCE BEST PARAMS:
+  best_mean: 1681.167494
+  run_id_suffix: 9_CustomHopper-source-v0
+  learning_rate: 0.0007081485369506237
+  clip_range: 0.26785576292805646
+  entropy_coefficient: 0.01776300171237951
+  best_std: 198.97857219839682
+
+TARGET BEST PARAMS:
+  best_mean: 1662.31597234
+  run_id_suffix: 15_CustomHopper-target-v0
+  learning_rate: 0.0008410748512928987
+  clip_range: 0.33285628206002466
+  entropy_coefficient: 0.017475769109612724
+  best_std: 98.69809840653454
+
+=== Final Evaluations ===
+[s→s]: 1731.82 ± 103.26
+[s→t]: 756.93 ± 84.23
+[t→t]: 1649.66 ± 97.24
