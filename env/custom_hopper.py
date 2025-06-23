@@ -29,14 +29,21 @@ class CustomHopper(MujocoEnv, utils.EzPickle):
     def sample_parameters(self):
         """Sample masses according to a domain randomization distribution"""
         
-        #
-        # TASK 6: implement domain randomization. Remember to sample new dynamics parameter
-        #         at the start of each training episode.
-        
-        raise NotImplementedError()
+        """Sample masses using Uniform Domain Randomization (UDR)
 
-        return
+        - Randomize all link masses (except torso) using uniform range [0.5x, 1.5x] of source env
+        - torso = index 1 → DO NOT randomize it!
+        """
 
+        # Original source masses
+        randomized_masses = np.copy(self.original_masses)
+
+        # Randomize other links: [1:] → excludes the torso (index 0)
+        randomized_masses[1:] = self.np_random.uniform(
+            low=0.5 * self.original_masses[1:],
+            high=1.5 * self.original_masses[1:]
+        )
+        return randomized_masses
 
     def get_parameters(self):
         """Get value of mass for each link"""
@@ -81,6 +88,9 @@ class CustomHopper(MujocoEnv, utils.EzPickle):
 
     def reset_model(self):
         """Reset the environment to a random initial state"""
+
+        self.set_random_parameters()  # ← UDR happens here
+
         qpos = self.init_qpos + self.np_random.uniform(low=-.005, high=.005, size=self.model.nq)
         qvel = self.init_qvel + self.np_random.uniform(low=-.005, high=.005, size=self.model.nv)
         self.set_state(qpos, qvel)
