@@ -47,7 +47,7 @@ class WandCallback(BaseCallback):
             wandb.log({
                 "reward": self.locals['infos'][0]['episode']['r'],
                 "step": self.num_timesteps
-            })
+            }, step=self.num_timesteps)
         return True
 
 class LoggerWithStop(BaseCallback):
@@ -75,7 +75,7 @@ class LoggerWithStop(BaseCallback):
 
     def _on_step(self) -> bool:
         if len(self.episode_rewards) >= self.max_episodes:
-            return True
+            pass
 
         if self._episode_start_time is None:
             self._episode_start_time = time.time()
@@ -119,7 +119,7 @@ class LoggerWithStop(BaseCallback):
                     "cumulative_wall_time": self.cumulative_wall,
                     "rolling_reward_mean_100": smoothed,
                     "rolling_reward_var_100": var
-                }, step=len(self.episode_rewards))
+                }, step=self.num_timesteps)
 
                 if self.verbose and len(self.episode_rewards) % self.print_every == 0:
                     print(f"--- Episode {len(self.episode_rewards)} ---")
