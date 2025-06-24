@@ -21,6 +21,11 @@ class CustomHopper(MujocoEnv, utils.EzPickle):
 
         if self.domain in ['source', 'udr', 'adr']:  # Source environment has an imprecise torso mass (-30% shift)
             self.sim.model.body_mass[1] *= 0.7
+        
+        if self.domain == 'adr':
+            self.adr_range = [0.5, 1.5]    # Initial range
+            self.performance = []         # Track episode returns for ADR
+
 
     def set_random_parameters(self):
         """Apply domain randomization parameters"""
