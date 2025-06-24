@@ -10,7 +10,7 @@ from stable_baselines3 import PPO
 
 def parse_args():
     parser = argparse.ArgumentParser()
-    parser.add_argument('--model-path', default='PPO_UDR_MODEL/ppo_udr_source.zip', type=str, help='Path to PPO model file')
+    parser.add_argument('--model-path', default='BestModelTuning/model/15_CustomHopper-target-v0/best_model.zip', type=str, help='Path to PPO model file')
     parser.add_argument('--device', default='cpu', type=str, help='cpu or cuda')
     parser.add_argument('--episodes', default=50, type=int, help='Number of test episodes')
     parser.add_argument('--render', default=False, action='store_true', help='Render the simulation')
@@ -50,10 +50,12 @@ def main():
         print(f"Episode {episode + 1}: Reward = {total_reward:.2f}")
 
     # Save test results
-    test_log_dir = "PPO_BEST_MODEL_TEST_UDR2"
+    test_log_dir = "PPO_BEST_MODEL_TEST_Target"
     os.makedirs(test_log_dir, exist_ok=True)
 
-    model_tag = os.path.basename(args.model_path).replace('.mdl', '')
+    # Clean tag (e.g. ppo_udr_source from ppo_udr_source.zip)
+    model_tag = os.path.splitext(os.path.basename(args.model_path))[0]
+
     np.save(f"{test_log_dir}/returns_test_{model_tag}.npy", np.array(test_returns))
     np.save(f"{test_log_dir}/times_test_{model_tag}.npy", np.array(test_times))
 
