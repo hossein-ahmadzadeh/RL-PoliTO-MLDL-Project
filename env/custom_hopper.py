@@ -19,7 +19,7 @@ class CustomHopper(MujocoEnv, utils.EzPickle):
         self.domain = domain
         self.original_masses = np.copy(self.sim.model.body_mass[1:])    # Default link masses
 
-        if self.domain in ['source', 'udr']:  # Source environment has an imprecise torso mass (-30% shift)
+        if self.domain in ['source', 'udr', 'adr']:  # Source environment has an imprecise torso mass (-30% shift)
             self.sim.model.body_mass[1] *= 0.7
 
 
@@ -49,7 +49,16 @@ class CustomHopper(MujocoEnv, utils.EzPickle):
 
     def set_parameters(self, task):
         """Set each hopper link's mass to a new value"""
-        self.sim.model.body_mass[1:] = task
+        if self.domain == 'adr':
+            if len(task) != 3:
+                raise ValueError(f"For ADR, expected task to have 3 elements, but got {len(task)}")
+                
+            self.sim.model.body_mass[2] = task[0] # thigh
+            self.sim.model.body_mass[3] = task[1] # leg
+            self.sim.model.body_mass[4] = task[2] # foot
+
+        else:
+            self.sim.model.body_mass[1:] = task
 
 
     def step(self, a):
@@ -157,4 +166,11 @@ gym.envs.register(
     entry_point="%s:CustomHopper" % __name__,
     max_episode_steps=500,
     kwargs={"domain": "udr"}
+)
+
+gym.envs.register(
+    id="CustomHopper-adr-v0",
+    entry_point="%s:CustomHopper" % __name__,
+    max_episode_steps=500,
+    kwargs={"domain": "adr"} # Use 'source' to get the initial torso shift
 )
