@@ -9,6 +9,8 @@ class AutomaticDomainRandomization():
         self.init_params = init_params
         self.thresholds = thresholds
         self.m = m
+        # === FIX 1: Store the fixed torso mass separately ===
+        self.fixed_torso_mass = self.init_params.pop('torso')
         self.bounds = self._init_bounds()
         self.p_b = p_b
         self.thigh_mass = None
@@ -99,7 +101,15 @@ class AutomaticDomainRandomization():
         randomCompletePart = self.set_random_parameter(bodyParts)
         part = randomCompletePart + ("_low" if pb < self.p_b else "_high")
         bodyParts[randomCompletePart] = self.bounds[part]
-        return list(bodyParts.values()), part
+
+        full_masses = [
+            self.fixed_torso_mass, 
+            bodyParts["thigh"], 
+            bodyParts["leg"], 
+            bodyParts["foot"]
+        ]
+
+        return full_masses, part
 
     def evaluate(self, reward, randomCompletePart):
         self.append_reward_bodypart(randomCompletePart, reward)
