@@ -1,23 +1,18 @@
-# train_ppo_adr_sweep.py
-
-import os
-import time
-import gym
-import wandb
-import numpy as np
-import argparse
-
-# Ensure custom_hopper.py is in ./env/ and the folder has an __init__.py file
-from env.custom_hopper import CustomHopper
+from env.custom_hopper import *
 from ADR import AutomaticDomainRandomization, ADRCallback
-
 from stable_baselines3 import PPO
-from stable_baselines3.common.vec_env import DummyVecEnv, VecMonitor
 from stable_baselines3.common.env_util import make_vec_env
-from stable_baselines3.common.callbacks import BaseCallback, EvalCallback, CallbackList
+from stable_baselines3.common.vec_env import DummyVecEnv
+from stable_baselines3.common.callbacks import CallbackList, EvalCallback
 from stable_baselines3.common.evaluation import evaluate_policy
+from stable_baselines3.common.monitor import Monitor
+import wandb
+wandb.login()
+import gym
+import argparse
+import os
 
-# --- Constants and Hyperparameters ---
+# === Best Params You Provided ===
 BEST_PARAMS = {
     "learning_rate": 0.0007081485369506237,
     "clip_range": 0.26785576292805646,
@@ -32,116 +27,86 @@ THIGH_MEAN_MASS = 3.92699082
 LEG_MEAN_MASS = 2.71433605
 FOOT_MEAN_MASS = 5.0893801
 
-# --- W&B Sweep Configuration ---
 sweep_configuration = {
-    "method": "grid",
-    "name": "ADR-Delta-Sweep",
-    "metric": {"name": "eval/mean_reward", "goal": "maximize"},
-    "parameters": {
-        "delta": {"values": [0.02, 0.05, 0.1]},
-    }
+        "method": "grid",
+        "name": "sweep",
+        "metric":
+            {"name": "mean_reward", "goal": "maximize"},
+        "parameters": {
+            "delta":{"values": [0.02, 0.05 ,0.1]},
+        }
 }
 
-class DetailedLoggingCallback(BaseCallback):
-    """Logs detailed episode data to W&B for plotting."""
-    def __init__(self, window_size=100, verbose=0):
-        super().__init__(verbose)
-        self.window_size = window_size
-        self.recent_rewards = []
-        self.start_time = time.time()
-
-    def _on_step(self) -> bool:
-        for i, done in enumerate(self.locals['dones']):
-            if done:
-                info = self.locals['infos'][i]
-                if "episode" in info:
-                    ep_info = info["episode"]
-                    reward, length = ep_info["r"], ep_info["l"]
-                    
-                    self.recent_rewards.append(reward)
-                    if len(self.recent_rewards) > self.window_size: self.recent_rewards.pop(0)
-                    
-                    log_data = {"reward/episode_reward": reward, "episode_length": length}
-                    if len(self.recent_rewards) == self.window_size:
-                        log_data["reward/rolling_mean_100"] = np.mean(self.recent_rewards)
-                    
-                    wandb.log(log_data, step=self.num_timesteps)
-        return True
 
 def parse_args():
     parser = argparse.ArgumentParser()
-    n_envs = os.cpu_count() or 1
-    parser.add_argument('--p-b', default=0.5, type=float, help='Probability of testing a boundary.')
-    parser.add_argument('--m', default=50, type=int, help='ADR buffer size.')
-    parser.add_argument('--low-th', default=1000, type=int, help='Lower performance threshold.')
-    parser.add_argument('--high-th', default=1500, type=int, help='Upper performance threshold.')
-    parser.add_argument('--n-envs', default=n_envs, type=int, help='Number of parallel environments.')
-    parser.add_argument('--timesteps', default=3_000_000, type=int, help='Total training timesteps.')
-    parser.add_argument('--save-path', default='./models_ADR_Sweep/', type=str, help='Path to save models.')
-    parser.add_argument('--device', default='auto', type=str, help='Device to use (cpu, cuda).')
+    parser.add_argument('--p-b', default=0.50, type=float, help='Probability of boundary testing')
+    parser.add_argument('--m', default=50, type=int, help='Reward buffer size per boundary')
+    parser.add_argument('--low-th', default=1000, type=int, help='Lower reward threshold')
+    parser.add_argument('--high-th', default=1500, type=int, help='Upper reward threshold')
+    parser.add_argument('--n-envs', default=os.cpu_count(), type=int, help='Number of parallel environments')
+    parser.add_argument('--timesteps', default=3_000_000, type=int, help='Total training timesteps')
+    parser.add_argument('--save-path', default='./models_ADR_Final/', type=str, help='Where to save intermediate models')
+    parser.add_argument('--save-freq', default=50_000, type=int, help='How often to save models')
+    parser.add_argument('--best-model-path', default='./best_models/', type=str, help='Best model output directory')
+    parser.add_argument('--device', default='cpu', choices=['cpu', 'cuda'], help='Training device')
     return parser.parse_args()
 
-def objective(config=None):
-    with wandb.init(config=config):
-        config = wandb.config
-        args = parse_args()
+args = parse_args()
 
-        # --- Environment Setup ---
-        # CRITICAL: Use 'CustomHopper-adr-v0' and wrap in VecMonitor
-        train_env = make_vec_env("CustomHopper-adr-v0", n_envs=args.n_envs, vec_env_cls=DummyVecEnv)
-        train_env = VecMonitor(train_env)
-        eval_env = gym.make("CustomHopper-target-v0")
+global adr_callback
+global best_params
+best_params={'best_std': 0, 'best_mean' : 0, "best_delta":0}
 
-        # --- ADR Handler ---
-        init_params = {"thigh": THIGH_MEAN_MASS, "leg": LEG_MEAN_MASS, "foot": FOOT_MEAN_MASS}
-        handlerADR = AutomaticDomainRandomization(
-            init_params, p_b=args.p_b, m=args.m, delta=config.delta,
-            thresholds=[args.low_th, args.high_th]
-        )
+def objective(envname):
+	wandb.init(project="MldlRLproject_Tuning_ADR")
+	delta = wandb.config.delta
+	timesteps = args.timesteps
 
-        # --- Callbacks ---
-        delta_save_path = os.path.join(args.save_path, f"delta_{config.delta}")
-        best_model_path = os.path.join(delta_save_path, "best_model")
-        
-        adr_callback = ADRCallback(handlerADR=handlerADR)
-        logging_callback = DetailedLoggingCallback()
-        # EvalCallback logs to wandb automatically under "eval/" prefix
-        eval_callback = EvalCallback(
-            eval_env, best_model_save_path=best_model_path,
-            log_path=delta_save_path, eval_freq=max(25000 // args.n_envs, 1),
-            n_eval_episodes=50, deterministic=True,
-        )
-        callbacks = CallbackList([adr_callback, logging_callback, eval_callback])
 
-        # --- Model ---
-        model = PPO('MlpPolicy', train_env, verbose=0, device=args.device, **BEST_PARAMS)
-        
-        # --- Training ---
-        model.learn(total_timesteps=args.timesteps, callback=callbacks, progress_bar=True)
+	init_params = {"thigh": THIGH_MEAN_MASS,  "leg": LEG_MEAN_MASS, "foot": FOOT_MEAN_MASS}
+
+	handlerADR = AutomaticDomainRandomization(init_params, p_b=args.p_b, m=args.m, delta=delta, thresholds=[args.low_th, args.high_th])
+		
+	train_env = make_vec_env('CustomHopper-adr-v0', n_envs=args.n_envs, vec_env_cls=DummyVecEnv)
+	train_env.set_attr(attr_name="bounds", value=handlerADR.get_bounds())
+		
+	test_env = gym.make('CustomHopper-adr-v0')
+	eval_callback = EvalCallback(eval_env=test_env, n_eval_episodes=50, eval_freq = args.save_freq, deterministic=True, render=False, best_model_save_path=args.best_model_path+"best_eval_ADR"+str(delta)+"/", warn=False) 
+	adr_callback = ADRCallback(handlerADR, train_env, eval_callback, n_envs=args.n_envs, verbose=0, save_freq=args.save_freq, save_path=args.save_path)
+	callbacks = CallbackList([adr_callback, eval_callback]) 	
+	
+	model = PPO(
+        'MlpPolicy',
+        train_env,
+        verbose=0,
+        **BEST_PARAMS
+    )
+	
+	model.learn(total_timesteps=timesteps, callback=callbacks, progress_bar=True)
+	mean_reward, std_reward = evaluate_policy(model, train_env, n_eval_episodes=50, render=False)
+
+	if mean_reward > best_params['best_mean']:
+				best_params['best_mean'] = mean_reward
+				best_params['best_std'] = std_reward
+				best_params['best_delta'] = delta
+
+	wandb.log({"mean_reward": mean_reward, "std_reward":std_reward})
+	return mean_reward, std_reward
+
+sweep_id = wandb.sweep(sweep=sweep_configuration, project="MldlRLproject_Tuning_ADR")
+wandb.agent(sweep_id, function=lambda:objective("CustomHopper-adr-v0"))
+print("Best distributions [source]: ",best_params)
+wandb.finish()
 
 def main():
-    # Login to W&B
-    wandb.login()
 
-    # Create the sweep
-    sweep_id = wandb.sweep(sweep=sweep_configuration, project="Hopper_ADR_Final_Sweep")
-    
-    # Run the sweep agent
-    wandb.agent(sweep_id, function=objective, count=3) # Runs for all 3 delta values
-
-    # --- Final Evaluation After Sweep ---
-    print("\n\n--- Final Evaluation on Target Environment ---")
-    args = parse_args()
-    for delta in sweep_configuration["parameters"]["delta"]["values"]:
-        model_path = os.path.join(args.save_path, f"delta_{delta}", "best_model", "best_model.zip")
-        if os.path.exists(model_path):
-            print(f"Evaluating model for delta = {delta}")
-            test_env = gym.make('CustomHopper-target-v0')
-            model = PPO.load(model_path)
-            mean_reward, std_reward = evaluate_policy(model, test_env, n_eval_episodes=100, render=False, warn=False)
-            print(f"[s-t] Mean Reward (delta={delta}): {mean_reward:.2f} +/- {std_reward:.2f}")
-        else:
-            print(f"Model for delta = {delta} not found at {model_path}")
+    for delta in ["0.02", "0.05", "0.1"]:
+        test_env = gym.make('CustomHopper-target-v0')
+        test_env = Monitor(test_env)
+        model = PPO.load("./best_eval_ADR"+delta+"/best_model")
+        mean_reward, std_reward = evaluate_policy(model, test_env, n_eval_episodes=50, render=False, warn=False)
+        print(f"[s-t] mean_reward ADR delta ="+delta+":{mean_reward:.2f} +/- {std_reward:.2f}")
 
 if __name__ == '__main__':
-    main()
+	main()
