@@ -29,6 +29,12 @@ LEG_MEAN_MASS = 2.71433605
 FOOT_MEAN_MASS = 5.0893801
 
 
+def parse_args():
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--device', type=str, default='cuda', choices=['cpu', 'cuda'], help='Device to train on')
+    return parser.parse_args()
+
+
 class WandADRCallback(EvalCallback):
     def __init__(self, print_every=1000, verbose=1):
         super().__init__(Monitor(gym.make("CustomHopper-adr-v0")), n_eval_episodes=50, eval_freq=50000,
@@ -106,6 +112,7 @@ class WandADRCallback(EvalCallback):
 
 
 def main():
+    args = parse_args()
     wandb.init(project="PPO_ADR_Hopper")
 
     env_id = "CustomHopper-adr-v0"
@@ -144,7 +151,8 @@ def main():
         n_steps=BEST_PARAMS["n_steps"],
         batch_size=BEST_PARAMS["batch_size"],
         gamma=BEST_PARAMS["gamma"],
-        gae_lambda=BEST_PARAMS["gae_lambda"]
+        gae_lambda=BEST_PARAMS["gae_lambda"],
+        device=args.device
     )
 
     model.learn(total_timesteps=3_000_000, callback=CallbackList([adr_callback, eval_callback]), progress_bar=True)
