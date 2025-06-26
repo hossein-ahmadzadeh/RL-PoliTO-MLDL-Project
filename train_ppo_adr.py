@@ -1,16 +1,18 @@
 import os
 import gym
+import time
 import wandb
 import numpy as np
-import time
+import argparse
+from ADR import AutomaticDomainRandomization, ADRCallback
 from stable_baselines3 import PPO
 from stable_baselines3.common.monitor import Monitor
-from stable_baselines3.common.callbacks import BaseCallback, EvalCallback, CallbackList
-from stable_baselines3.common.evaluation import evaluate_policy
-from env.custom_hopper import *
-from ADR import AutomaticDomainRandomization, ADRCallback
 from stable_baselines3.common.vec_env import DummyVecEnv
+from stable_baselines3.common.env_util import make_vec_env
+from stable_baselines3.common.callbacks import EvalCallback, CallbackList
+from stable_baselines3.common.evaluation import evaluate_policy
 
+LOG_DIR = "./logs_ADR"
 
 BEST_PARAMS = {
     "learning_rate": 0.0007081485369506237,
@@ -22,20 +24,20 @@ BEST_PARAMS = {
     "gae_lambda": 0.9779077684516388,
 }
 
-TOTAL_TIMESTEPS = 3_000_000
-SAVE_PATH = "PPO_ADR_MODEL"
-MODEL_NAME = "ppo_adr_source.zip"
-LOG_DIR = "PPO/logs/ppo_adr_source"
+THIGH_MEAN_MASS = 3.92699082
+LEG_MEAN_MASS = 2.71433605
+FOOT_MEAN_MASS = 5.0893801
 
-class WandADRCallback(BaseCallback):
-    def __init__(self, handlerADR, print_every=1000, verbose=1):
-        super().__init__(verbose)
+
+class WandADRCallback(EvalCallback):
+    def __init__(self, print_every=1000, verbose=1):
+        super().__init__(Monitor(gym.make("CustomHopper-adr-v0")), n_eval_episodes=50, eval_freq=50000,
+                         best_model_save_path="./best_eval_adr/", deterministic=True, render=False)
         self.print_every = print_every
-        self.handlerADR = handlerADR
         self.episode_rewards = []
+        self.recent_rewards = []
         self.smoothed = []
         self.variance = []
-        self.recent_rewards = []
         self.cumulative_sim = 0.0
         self.cumulative_wall = 0.0
         self.cumulative_sim_times = []
@@ -46,7 +48,7 @@ class WandADRCallback(BaseCallback):
         self.window = 100
         os.makedirs(LOG_DIR, exist_ok=True)
 
-    def _on_step(self):
+    def _on_step(self) -> bool:
         if self._episode_start_time is None:
             self._episode_start_time = time.time()
 
@@ -83,8 +85,7 @@ class WandADRCallback(BaseCallback):
                     "rolling_reward_mean_100": smoothed,
                     "rolling_reward_var_100": var,
                     "cumulative_sim_time": self.cumulative_sim,
-                    "cumulative_wall_time": self.cumulative_wall,
-                    "entropy": self.handlerADR.compute_entropy(),
+                    "cumulative_wall_time": self.cumulative_wall
                 }, step=self.num_timesteps)
 
                 if self.verbose and len(self.episode_rewards) % self.print_every == 0:
@@ -94,7 +95,7 @@ class WandADRCallback(BaseCallback):
                     print(f"  Sim Time: {sim_time:.2f}s | Wall Time: {wall_time:.2f}s")
         return True
 
-    def _on_training_end(self):
+    def _on_training_end(self) -> None:
         np.save(os.path.join(LOG_DIR, 'episode_rewards.npy'), self.episode_rewards)
         np.save(os.path.join(LOG_DIR, 'rolling_reward_mean_100.npy'), self.smoothed)
         np.save(os.path.join(LOG_DIR, 'rolling_reward_var_100.npy'), self.variance)
@@ -103,54 +104,53 @@ class WandADRCallback(BaseCallback):
         np.save(os.path.join(LOG_DIR, 'episode_times_simulated.npy'), self.episode_lengths)
         np.save(os.path.join(LOG_DIR, 'episode_times_wallclock.npy'), self.wall_times)
 
-# === Init W&B ===
-wandb.init(
-    project="PPO_ADR_Hopper",
-    name="ppo_adr_source_train",
-    config=BEST_PARAMS
-)
 
-# === Env Setup ===
-train_env = DummyVecEnv([lambda: Monitor(gym.make("CustomHopper-source-v0"))])
+def main():
+    wandb.init(project="PPO_ADR_Hopper")
 
-# === ADR Handler ===
-handlerADR = AutomaticDomainRandomization(
-    init_params={
-        "torso": 2.474004218, # Default is 3.53429174, source domain is * 0.7
-        "thigh": 3.92699082,
-        "leg": 2.71433605,
-        "foot": 5.0893801
-    },
-    p_b=0.5,
-    m=20,
-    thresholds=[1000, 1400]
-)
+    env_id = "CustomHopper-adr-v0"
+    train_env = make_vec_env(env_id, n_envs=1, vec_env_cls=DummyVecEnv)
+    test_env = gym.make(env_id)
 
-adr_callback = ADRCallback(handlerADR, train_env, None, verbose=0)
-wandb_callback = WandADRCallback(handlerADR)
-callback = CallbackList([adr_callback, wandb_callback])
+    init_params = {"thigh": THIGH_MEAN_MASS, "leg": LEG_MEAN_MASS, "foot": FOOT_MEAN_MASS}
+    adr_handler = AutomaticDomainRandomization(
+        init_params=init_params,
+        p_b=0.5,
+        m=50,
+        delta=0.05,
+        thresholds=[1000, 1500]
+    )
 
-# === PPO ===
-model = PPO(
-    "MlpPolicy",
-    train_env,
-    learning_rate=BEST_PARAMS["learning_rate"],
-    clip_range=BEST_PARAMS["clip_range"],
-    ent_coef=BEST_PARAMS["ent_coef"],
-    n_steps=BEST_PARAMS["n_steps"],
-    batch_size=BEST_PARAMS["batch_size"],
-    gamma=BEST_PARAMS["gamma"],
-    gae_lambda=BEST_PARAMS["gae_lambda"],
-    verbose=0
-)
+    train_env.set_attr("bounds", adr_handler.get_bounds())
 
-model.learn(total_timesteps=TOTAL_TIMESTEPS, callback=callback)
+    eval_callback = WandADRCallback()
+    adr_callback = ADRCallback(
+        handlerADR=adr_handler,
+        vec_env=train_env,
+        eval_callback=eval_callback,
+        n_envs=1,
+        verbose=1,
+        save_freq=50000,
+        save_path="./models_ADR"
+    )
 
-# === Save ===
-os.makedirs(SAVE_PATH, exist_ok=True)
-model.save(os.path.join(SAVE_PATH, MODEL_NAME))
+    model = PPO(
+        policy="MlpPolicy",
+        env=train_env,
+        verbose=1,
+        learning_rate=BEST_PARAMS["learning_rate"],
+        clip_range=BEST_PARAMS["clip_range"],
+        ent_coef=BEST_PARAMS["ent_coef"],
+        n_steps=BEST_PARAMS["n_steps"],
+        batch_size=BEST_PARAMS["batch_size"],
+        gamma=BEST_PARAMS["gamma"],
+        gae_lambda=BEST_PARAMS["gae_lambda"]
+    )
 
-# === Final Evaluation ===
-mean, std = evaluate_policy(model, train_env, n_eval_episodes=50)
-wandb.log({"final_mean_reward": mean, "final_std_reward": std})
-wandb.finish()
+    model.learn(total_timesteps=3_000_000, callback=CallbackList([adr_callback, eval_callback]), progress_bar=True)
+
+    wandb.finish()
+
+
+if __name__ == '__main__':
+    main()
