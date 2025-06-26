@@ -9,6 +9,8 @@ from stable_baselines3.common.callbacks import BaseCallback, EvalCallback, Callb
 from stable_baselines3.common.evaluation import evaluate_policy
 from env.custom_hopper import *
 from ADR import AutomaticDomainRandomization, ADRCallback
+from stable_baselines3.common.vec_env import DummyVecEnv
+
 
 BEST_PARAMS = {
     "learning_rate": 0.0007081485369506237,
@@ -109,11 +111,12 @@ wandb.init(
 )
 
 # === Env Setup ===
-train_env = Monitor(gym.make("CustomHopper-source-v0"))
+train_env = DummyVecEnv([lambda: Monitor(gym.make("CustomHopper-source-v0"))])
 
 # === ADR Handler ===
 handlerADR = AutomaticDomainRandomization(
     init_params={
+        "torso": 2.474004218, # Default is 3.53429174, source domain is * 0.7
         "thigh": 3.92699082,
         "leg": 2.71433605,
         "foot": 5.0893801
