@@ -19,12 +19,8 @@ class CustomHopper(MujocoEnv, utils.EzPickle):
         self.domain = domain
         self.original_masses = np.copy(self.sim.model.body_mass[1:])    # Default link masses
 
-        if self.domain in ['source', 'udr', 'adr']:  # Source environment has an imprecise torso mass (-30% shift)
+        if self.domain in ['source', 'udr']:  # Source environment has an imprecise torso mass (-30% shift)
             self.sim.model.body_mass[1] *= 0.7
-        
-        if self.domain == 'adr':
-            self.adr_range = [0.5, 1.5]    # Initial range
-            self.performance = []         # Track episode returns for ADR
 
 
     def set_random_parameters(self):
@@ -42,26 +38,8 @@ class CustomHopper(MujocoEnv, utils.EzPickle):
                 low=0.5 * self.original_masses[1:],
                 high=1.5 * self.original_masses[1:]
             )
-            
-        elif self.domain == 'adr':
-            low = self.adr_range[0] * self.original_masses[1:]
-            high = self.adr_range[1] * self.original_masses[1:]
-            randomized_masses[1:] = self.np_random.uniform(low=low, high=high)
 
         return randomized_masses
-
-    
-    def update_adr(self, last_return):
-        """Adjust ADR range based on agent performance"""
-        self.performance.append(last_return)
-        if len(self.performance) >= 5:
-            mean_perf = np.mean(self.performance[-5:])
-            if mean_perf > 1000 and self.adr_range[1] < 1.5:
-                self.adr_range[1] += 0.05  # increase difficulty
-            elif mean_perf < 700 and self.adr_range[0] > 0.5:
-                self.adr_range[0] -= 0.05  # decrease lower bound
-            self.adr_range = [np.clip(self.adr_range[0], 0.5, 1.5),
-                              np.clip(self.adr_range[1], 0.5, 1.5)]
 
     def get_parameters(self):
         """Get value of mass for each link"""
@@ -107,7 +85,7 @@ class CustomHopper(MujocoEnv, utils.EzPickle):
     def reset_model(self):
         """Reset the environment to a random initial state"""
 
-        if self.domain in ['udr', 'adr']:
+        if self.domain == 'udr':
             self.set_random_parameters()
 
         qpos = self.init_qpos + self.np_random.uniform(low=-.005, high=.005, size=self.model.nq)
@@ -179,11 +157,4 @@ gym.envs.register(
     entry_point="%s:CustomHopper" % __name__,
     max_episode_steps=500,
     kwargs={"domain": "udr"}
-)
-
-gym.envs.register(
-    id="CustomHopper-adr-v0",
-    entry_point="%s:CustomHopper" % __name__,
-    max_episode_steps=500,
-    kwargs={"domain": "adr"}
 )
