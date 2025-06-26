@@ -125,7 +125,7 @@ model = PPO(
     batch_size=BEST_PARAMS["batch_size"],
     gamma=BEST_PARAMS["gamma"],
     gae_lambda=BEST_PARAMS["gae_lambda"],
-    verbose=1
+    verbose=0
 )
 
 model.learn(total_timesteps=TOTAL_TIMESTEPS, callback=callback)
