@@ -130,20 +130,20 @@ class AutomaticDomainRandomization():
 
 
 class ADRCallback(BaseCallback):
-    def __init__(self, handlerADR: AutomaticDomainRandomization, vec_env, eval_callback, n_envs=1, verbose=0, save_freq=1000, save_path: str = './models', name_prefix: str = 'adr_model'):
+    def __init__(self, handlerADR: AutomaticDomainRandomization, vec_env, eval_callback,
+                 verbose=0, save_freq=1000, save_path: str = './models', name_prefix: str = 'adr_model'):
         super(ADRCallback, self).__init__(verbose)
         self.adr = handlerADR
-        self.n_envs = n_envs
-        self.vec_env = vec_env
+        self.vec_env = vec_env  
         self.eval_callback = eval_callback
-        self.bounds_used = [None] * n_envs
+        self.bound_used = None
         self.n_episodes = 0
         self.save_freq = save_freq
         self.save_path = save_path
         self.name_prefix = name_prefix
 
     def _on_step(self):
-        for done, infos, nr_env, bound_used in zip(self.locals['dones'], self.locals['infos'], range(self.vec_env.num_envs), self.bounds_used):
+        for done, info in zip(self.locals['dones'], self.locals['infos']):
             wandb.log({
                 "step": self.num_timesteps,
                 "entropy": self.adr.compute_entropy()
@@ -151,19 +151,19 @@ class ADRCallback(BaseCallback):
 
             if done:
                 self.n_episodes += 1
-                reward = infos['episode']['r']
+                reward = info['episode']['r']
                 wandb.log({
                     "reward": reward,
                     "step": self.num_timesteps
                 })
 
                 # === ADR Evaluation and Bound Updates ===
-                if bound_used is not None:
-                    self.adr.evaluate(reward, bound_used)
+                if self.bound_used is not None:
+                    self.adr.evaluate(reward, self.bound_used)
 
                 # === Sample New Random Masses + Update Env ===
-                env_params, self.bounds_used[nr_env] = self.adr.random_masses()
-                self.vec_env.env_method('set_parameters', env_params, indices=nr_env)
+                env_params, self.bound_used = self.adr.random_masses()
+                self.vec_env.env_method('set_parameters', env_params, indices=0)
 
                 # === Log All Bounds ===
                 wandb.log({
@@ -173,8 +173,6 @@ class ADRCallback(BaseCallback):
                     "leg_high": self.adr.bounds["leg_high"],
                     "foot_low": self.adr.bounds["foot_low"],
                     "foot_high": self.adr.bounds["foot_high"],
-
-                    # === Optional: Range Widths for Visualization ===
                     "thigh_range": self.adr.bounds["thigh_high"] - self.adr.bounds["thigh_low"],
                     "leg_range": self.adr.bounds["leg_high"] - self.adr.bounds["leg_low"],
                     "foot_range": self.adr.bounds["foot_high"] - self.adr.bounds["foot_low"]
