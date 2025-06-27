@@ -13,3 +13,4 @@ logs/model_reinforce_with_actor_critic_norm_tanh_action/actions_log.npy
 logs/model_reinforce_with_actor_critic_norm_tanh_action/entropy_log.npy
 logs/model_actor_critic_norm_tanh_entropy/actions_log.npy
 logs/model_actor_critic_norm_tanh_entropy/entropy_log.npywandb/
+wandb/
